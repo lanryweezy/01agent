@@ -1,0 +1,22 @@
+[MASTER]
+# Specify a black-listed name for variables, functions, etc.
+# bad-names=i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z
+
+[MESSAGES CONTROL]
+# Disable the given comma separated list of messages by id or name.
+# disable=
+# enable=
+
+[REPORTS]
+# Activate the score.
+# enable=
+# disable=
+
+[FORMAT]
+# Maximum number of characters on a line (default: 100)
+max-line-length=120
+
+[TYPECHECK]
+# List of members which are set dynamically and missed by pylint inference
+# It is recommended to use the qualified name for the member (e.g., 'foo.bar.baz').
+# generated-members=

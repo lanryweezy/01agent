@@ -1,0 +1,157 @@
+import { app, Menu, ipcMain } from 'electron';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import isDev from 'electron-is-dev';
+import Store from 'electron-store';
+import constants from './electron/utils/constants.js';
+import http from 'http';
+import { v4 as uuidv4 } from 'uuid';
+import {
+  createWindow,
+  createOverlayWindow,
+  expandMinimizeOverlay,
+  launchBackgroundAuthWindow,
+  launchBackgroundAgentWindow,
+  bgAgentWindow,
+} from './electron/main-process/windowManager.js';
+import {
+  startBackgroundAuthServices,
+  cleanupBackgroundAuthServices,
+  cleanupBGAgent,
+  stopAiAgent,
+  aiagentProcess,
+  bgAuthProcess,
+} from './electron/main-process/processManager.js';
+import { registerIpcHandlers } from './electron/main-process/ipcHandlers.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const store = new Store();
+
+let mainWindow;
+let overlayWindow;
+let bgSetupWindow;
+let readyToClose = false;
+
+function ensureDeviceId() {
+  let deviceId = store.get(constants.DEVICE_ID_STORE_KEY);
+  if (!deviceId) {
+    deviceId = uuidv4();
+    store.set(constants.DEVICE_ID_STORE_KEY, deviceId);
+    console.log(`[Device ID created]: ${deviceId}`);
+  } else {
+    console.log(`[Device ID exists]: ${deviceId}`);
+  }
+}
+
+function waitForNoVNCPortReady(port, timeout = 10000, interval = 300) {
+  const deadline = Date.now() + timeout;
+
+  return new Promise((resolve, reject) => {
+    const check = () => {
+      const req = http.get({ hostname: '127.0.0.1', port, path: '/', timeout: 1000 }, (res) => {
+        res.destroy();
+        resolve(true); // Port is ready
+      });
+
+      req.on('error', (err) => {
+        if (Date.now() > deadline) return reject(new Error('Timed out waiting for noVNC'));
+        setTimeout(check, interval);
+      });
+
+      req.end();
+    };
+
+    check();
+  });
+}
+
+const createAppMenu = () => {
+  const template = [
+    {
+      label: 'App',
+      submenu: [
+        {
+          label: 'Background Mode Authentication',
+          click: () => {
+            if ((aiagentProcess && !aiagentProcess.killed) || (bgAuthProcess && !bgAuthProcess.killed)) {
+              return;
+            }
+            launchBackgroundAuthWindow(cleanupBackgroundAuthServices, waitForNoVNCPortReady, startBackgroundAuthServices);
+          },
+        },
+        {
+          label: 'Logout',
+          click: () => {
+            if (overlayWindow) {
+              overlayWindow.close();
+            }
+            mainWindow?.webContents.send('trigger-logout');
+          },
+        },
+        { role: 'quit' },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'togglefullscreen' },
+        // { role: 'toggledevtools' },
+      ],
+    },
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+};
+
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
+app.whenReady().then(() => {
+  ensureDeviceId();
+  mainWindow = createWindow(readyToClose, ipcMain);
+  if (store.get(constants.ACCESS_TOKEN_STORE_KEY)) {
+    overlayWindow = createOverlayWindow();
+  }
+  createAppMenu();
+  registerIpcHandlers(store, mainWindow, overlayWindow, bgSetupWindow, bgAgentWindow, expandMinimizeOverlay);
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      mainWindow = createWindow(readyToClose, ipcMain);
+      overlayWindow = createOverlayWindow();
+    }
+  });
+});
+
+app.on('window-all-closed', () => {
+    stopAiAgent();
+    if (process.platform !== 'darwin') app.quit();
+});
+
+mainWindow.on('closed', () => {
+    mainWindow = null;
+
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.close();
+    }
+    if (bgAgentWindow && !bgAgentWindow.isDestroyed()) {
+        bgAgentWindow.close();
+    }
+    if (bgSetupWindow && !bgSetupWindow.isDestroyed()) {
+        bgSetupWindow.close();
+    }
+    if (backgroundAuthWindow && !backgroundAuthWindow.isDestroyed()) {
+        backgroundAuthWindow.close();
+    }
+});

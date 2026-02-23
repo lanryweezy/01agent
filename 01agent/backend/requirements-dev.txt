@@ -1,0 +1,8 @@
+pytest>=7.0.0 # Testing framework
+pytest-asyncio>=0.21.0 # Async testing support
+httpx>=0.24.0 # HTTP client for testing
+psycopg2-binary
+black
+pylint
+airtest
+tenacity

@@ -1,0 +1,13 @@
+- Update .env to include production server info.
+- Implement BG Mode a different way.
+
+Update extraResources in package.json to:
+
+"extraResources": [
+    {
+    "from": "agent_build/mac/agent",
+    "to": "agent"
+    }
+],
+
+- Update suggestor + aiagent to run from compiled version rather than python code.

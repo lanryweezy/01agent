@@ -1,0 +1,66 @@
+{
+  "name": "01agent-app",
+  "version": "2.0.0",
+  "private": true,
+  "description": "01Agent React Frontend - AI Desktop Assistant Interface",
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.6.1",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.8.4",
+    "electron-store": "^10.0.1",
+    "date-fns": "^3.6.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^6.8.0",
+    "react-spinners": "^0.15.0",
+    "styled-components": "^6.1.17",
+    "web-vitals": "^2.1.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.34.4",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-jsx-a11y": "^6.9.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.3",
+    "vite": "^5.4.2",
+    "@vitejs/plugin-react": "^4.3.1",
+    "terser": "^5.31.3",
+    "cssnano-cli": "^1.0.5"
+  },
+  "homepage": "./",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint \"src/**/*.{js,jsx}\"",
+    "format": "prettier --write \"src/**/*.{js,jsx,css,md}\"",
+    "minify:css": "cssnano ../../landing-page/styles.css > ../../landing-page/styles.min.css",
+    "minify:js": "terser ../../landing-page/script.js -o ../../landing-page/script.min.js -c -m",
+    "minify": "npm run minify:css && npm run minify:js"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
