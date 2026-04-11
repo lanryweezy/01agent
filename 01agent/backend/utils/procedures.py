@@ -39,18 +39,30 @@ def generate_api_key():
 
 
 def extract_json(raw: str):
-    # WARNING: Regex-based JSON extraction can be fragile. Consider more robust parsing
-    # if LLM output format is inconsistent (e.g., extract content within markdown code blocks first).
-    match = re.search(r"\{.*\}", raw, re.DOTALL)
-    if not match:
-        raise ValueError("No valid JSON found in model response.")
-    return json.loads(match.group(0))
+    """Robustly extracts JSON object from LLM response strings."""
+    try:
+        if '```json' in raw:
+            raw = raw.split('```json')[1].split('```')[0]
+        elif '```' in raw:
+            raw = raw.split('```')[1].split('```')[0]
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if not match:
+            return json.loads(raw.strip())
+        return json.loads(match.group(0))
+    except Exception as e:
+        raise ValueError(f"Failed to parse JSON from response: {e}")
 
 
 def extract_json_array(raw: str):
-    # WARNING: Regex-based JSON extraction can be fragile. Consider more robust parsing
-    # if LLM output format is inconsistent (e.g., extract content within markdown code blocks first).
-    match = re.search(r"\[.*\]", raw, re.DOTALL)
-    if not match:
-        raise ValueError("No valid JSON array found in model response.")
-    return json.loads(match.group(0))
+    """Robustly extracts JSON array from LLM response strings."""
+    try:
+        if '```json' in raw:
+            raw = raw.split('```json')[1].split('```')[0]
+        elif '```' in raw:
+            raw = raw.split('```')[1].split('```')[0]
+        match = re.search(r"\[.*\]", raw, re.DOTALL)
+        if not match:
+            return json.loads(raw.strip())
+        return json.loads(match.group(0))
+    except Exception as e:
+        raise ValueError(f"Failed to parse JSON array from response: {e}")

@@ -10,7 +10,7 @@ from typing import Dict, List, Any
 logger = logging.getLogger(__name__)
 
 # Configure pyautogui
-pyautogui.FAILSAFE = False # We manage our own safety
+pyautogui.FAILSAFE = True # Standard safety: move mouse to corner to abort
 
 class Executor:
     """
