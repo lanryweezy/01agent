@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     
     # Ollama
     ollama_url: str = "http://127.0.0.1:11434"
-    ollama_model_name: str = "llava:7b"
+    ollama_model_name: str = "claude-3-7-sonnet-latest"
 
     # Agent-specific LLM configurations
     planner_agent_model_type: str = "openai"
@@ -65,7 +65,7 @@ class Settings(BaseSettings):
     suggestor_agent_model_id: str = "gpt-4o-mini"
 
     computer_use_agent_model_type: str = "anthropic"
-    computer_use_agent_model_id: str = "claude-3-5-sonnet-20241022" # Multimodal model
+    computer_use_agent_model_id: str = "claude-3-7-sonnet-latest" # Multimodal model
 
     classifier_agent_model_type: str = "openai"
     classifier_agent_model_id: str = "gpt-4o-mini"

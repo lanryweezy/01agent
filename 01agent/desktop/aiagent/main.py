@@ -16,7 +16,7 @@ from io import BytesIO
 # Import our custom modules
 try:
     from executor import executor
-    from background_executor import background_executor, ScriptType
+    from background_executor import background_executor
     from browser_automation import browser_automation
     from resource_monitor import ResourceMonitor, SystemMetrics
 except ImportError as e:
