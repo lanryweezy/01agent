@@ -1,4 +1,4 @@
-import { app, Menu, ipcMain } from 'electron';
+import { app, Menu, ipcMain, globalShortcut } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import isDev from 'electron-is-dev';
@@ -108,6 +108,20 @@ if (!gotLock) {
 app.whenReady().then(() => {
   ensureDeviceId();
   mainWindow = createWindow(readyToClose, ipcMain);
+
+  // Register Global Hotkey: Alt+Space (or Command+Space on Mac) to focus/unfocus
+  const shortcut = process.platform === 'darwin' ? 'Command+Space' : 'Alt+Space';
+  globalShortcut.register(shortcut, () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible() && mainWindow.isFocused()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  });
+
   if (store.get(constants.ACCESS_TOKEN_STORE_KEY)) {
     overlayWindow = createOverlayWindow();
   }
@@ -124,6 +138,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     stopAiAgent();
+    globalShortcut.unregisterAll();
     if (process.platform !== 'darwin') app.quit();
 });
 

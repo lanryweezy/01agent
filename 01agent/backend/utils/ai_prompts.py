@@ -329,6 +329,18 @@ launch_app
 → { "action": "launch_app", "params": { "app_name": "e.g. Notepad, Include only the app name without any extensions." } }
 
 focus_app
+→ { "action": "focus_app", "params": { "app_name": "Notepad" } }
+
+window_move
+→ { "action": "window_move", "params": { "title": "Notepad", "x": 100, "y": 100 } }
+
+window_resize
+→ { "action": "window_resize", "params": { "title": "Notepad", "width": 800, "height": 600 } }
+
+window_minimize, window_maximize, window_restore
+→ { "action": "window_minimize", "params": { "title": "Notepad" } }
+
+focus_app
 → { "action": "focus_app", "params": { "app_name": "e.g. Notepad, Include only the app name without any extensions." } }
 Use focus_app to switch to an already running app and bring it in focus without needing to relaunch.
 

@@ -1,9 +1,10 @@
 import { spawn, exec } from 'child_process';
+import path from 'path';
 import kill from 'tree-kill';
 
 let aiagentProcess;
 
-function startAiAgent(apiUrl, threadId, accessToken) {
+function startAiAgent(apiUrl, threadId, accessToken, mainWindow, overlayWindow) {
     if (aiagentProcess && !aiagentProcess.killed) return;
 
     const env = {
@@ -20,7 +21,15 @@ function startAiAgent(apiUrl, threadId, accessToken) {
     aiagentProcess = spawn(pythonPath, [agentScript], { env });
 
     aiagentProcess.stdout.on('data', (data) => {
-        console.log(`[Agent]: ${data.toString()}`);
+        const str = data.toString();
+        console.log(`[Agent]: ${str}`);
+        if (str.includes('"event": "action"')) {
+            try {
+                const json = JSON.parse(str.trim());
+                mainWindow?.webContents.send('agent-action', json.data);
+                overlayWindow?.webContents.send('agent-action', json.data);
+            } catch (e) {}
+        }
     });
 
     aiagentProcess.stderr.on('data', (data) => {

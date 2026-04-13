@@ -69,32 +69,30 @@ function createWindow(readyToClose, ipcMain) {
 }
 
 function createOverlayWindow() {
-  const windowWidth = 60;
-  const windowHeight = 60;
-  const margin = 25;
-
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workArea;
 
-  const xPos = screenWidth - windowWidth - margin;
-  const yPos = screenHeight - windowHeight - margin;
-
   const overlayWindow = new BrowserWindow({
-    width: 60,
-    height: 60,
-    x: xPos,
-    y: yPos,
+    width: screenWidth,
+    height: screenHeight,
+    x: 0,
+    y: 0,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     resizable: false,
+    focusable: false,
     skipTaskbar: true,
+    hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, 'electron', 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+
+  // Allow clicking through the overlay to reach underlying windows
+  overlayWindow.setIgnoreMouseEvents(true, { forward: true });
 
   const overlayURL = isDev
     ? 'http://localhost:6763/#/overlay'

@@ -119,6 +119,7 @@ class Executor:
                 elif action == "scroll":
                     direction = params.get("scroll_direction")
                     amount = params.get("scroll_amount", 3)
+                    # Note: amount/direction interpretation varies by OS in pyautogui
                     clicks = amount * 100
                     if direction == "down":
                         pyautogui.scroll(-clicks)
@@ -148,6 +149,15 @@ class Executor:
                 elif action == "clipboard_set":
                     pyperclip.copy(params.get("text", ""))
 
+                elif action == "window_move":
+                    self._move_window(params.get("title"), params.get("x"), params.get("y"))
+
+                elif action == "window_resize":
+                    self._resize_window(params.get("title"), params.get("width"), params.get("height"))
+
+                elif action in ["window_minimize", "window_maximize", "window_restore"]:
+                    self._window_action(params.get("title"), action.split('_')[1])
+
                 elif action == "request_screenshot":
                     pass
 
@@ -160,28 +170,44 @@ class Executor:
             except Exception as e:
                 logger.error(f"Failed to execute action {action}: {e}")
 
-    def _focus_window(self, name: str):
-        """Attempts to focus a window by its name."""
-        if not pwc:
-            logger.warning("pywinctl not installed, cannot focus window.")
-            return
+    def _get_window(self, title: str):
+        if not pwc: return None
+        windows = pwc.getWindowsWithTitle(title)
+        if windows: return windows[0]
+        # Fuzzy match
+        for t in pwc.getAllTitles():
+            if title.lower() in t.lower():
+                return pwc.getWindowsWithTitle(t)[0]
+        return None
 
-        try:
-            windows = pwc.getWindowsWithTitle(name)
-            if windows:
-                windows[0].activate()
-                logger.info(f"Focused window: {name}")
-            else:
-                # Try fuzzy match
-                all_titles = pwc.getAllTitles()
-                for title in all_titles:
-                    if name.lower() in title.lower():
-                        pwc.getWindowsWithTitle(title)[0].activate()
-                        logger.info(f"Focused window (fuzzy): {title}")
-                        return
-                logger.warning(f"No window found matching: {name}")
-        except Exception as e:
-            logger.error(f"Error focusing window {name}: {e}")
+    def _focus_window(self, name: str):
+        win = self._get_window(name)
+        if win:
+            try:
+                win.activate()
+                logger.info(f"Focused window: {win.title}")
+            except Exception as e:
+                logger.error(f"Error focusing window: {e}")
+
+    def _move_window(self, title: str, x: int, y: int):
+        win = self._get_window(title)
+        if win:
+            win.moveTo(x, y)
+            logger.info(f"Moved window '{win.title}' to ({x}, {y})")
+
+    def _resize_window(self, title: str, width: int, height: int):
+        win = self._get_window(title)
+        if win:
+            win.resizeTo(width, height)
+            logger.info(f"Resized window '{win.title}' to {width}x{height}")
+
+    def _window_action(self, title: str, action: str):
+        win = self._get_window(title)
+        if win:
+            if action == "minimize": win.minimize()
+            elif action == "maximize": win.maximize()
+            elif action == "restore": win.restore()
+            logger.info(f"Performed {action} on window '{win.title}'")
 
     def get_system_state(self) -> Dict[str, Any]:
         """Gathers information about the current OS state."""
