@@ -88,7 +88,12 @@ const Performance = () => {
           }
         },
         history: generateMockHistory(),
-        recommendations: generateMockRecommendations()
+        recommendations: generateMockRecommendations(),
+        executionStream: [
+          { time: '12:00:01', action: 'Capture Screenshot', status: 'success' },
+          { time: '12:00:02', action: 'Vision Reasoning (Claude 3.7)', status: 'working' },
+          { time: '12:00:05', action: 'Execute: Click Button', status: 'pending' },
+        ]
       };
       
       setPerformanceData(mockData);
@@ -389,6 +394,33 @@ const Performance = () => {
                 >
                   🔄 Refresh Data
                 </QuickActionButton>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Execution Stream */}
+          <Card isDarkMode={isDarkMode}>
+            <CardHeader isDarkMode={isDarkMode}>
+              <h3>Live Execution Stream</h3>
+            </CardHeader>
+            <CardContent isDarkMode={isDarkMode}>
+              <div style={{
+                fontFamily: 'monospace',
+                background: isDarkMode ? '#1a1a1a' : '#f0f0f0',
+                padding: '10px',
+                borderRadius: '4px',
+                maxHeight: '200px',
+                overflowY: 'auto'
+              }}>
+                {performanceData.executionStream?.map((item, i) => (
+                  <div key={i} style={{ marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#888' }}>[{item.time}]</span>
+                    <span style={{ flex: 1, marginLeft: '10px' }}>{item.action}</span>
+                    <Badge variant={item.status === 'success' ? 'success' : item.status === 'working' ? 'warning' : 'default'} isDarkMode={isDarkMode}>
+                      {item.status}
+                    </Badge>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

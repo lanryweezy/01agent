@@ -8,6 +8,12 @@ import platform
 import webbrowser
 from typing import Dict, List, Any
 
+# Cross-platform window management
+try:
+    import pywinctl as pwc
+except ImportError:
+    pwc = None
+
 logger = logging.getLogger(__name__)
 
 # Configure pyautogui
@@ -84,7 +90,6 @@ class Executor:
                 elif action == "scroll":
                     direction = params.get("scroll_direction")
                     amount = params.get("scroll_amount", 3)
-                    # Note: amount/direction interpretation varies by OS in pyautogui
                     clicks = amount * 100
                     if direction == "down":
                         pyautogui.scroll(-clicks)
@@ -105,19 +110,16 @@ class Executor:
 
                 elif action == "focus_app":
                     app_name = params.get("app_name")
-                    logger.info(f"Focusing app: {app_name}")
-                    # Basic platform-specific focus logic could go here
+                    self._focus_window(app_name)
 
                 elif action == "launch_browser":
                     url = params.get("url", "https://www.google.com")
                     webbrowser.open(url)
 
                 elif action == "request_screenshot":
-                    # main loop will take another screenshot anyway
                     pass
 
                 elif action in ["subtask_completed", "subtask_failed", "tool_use"]:
-                    # These are primarily handled by the backend or main loop logic
                     logger.info(f"Action {action} acknowledged.")
 
                 else:
@@ -125,5 +127,43 @@ class Executor:
 
             except Exception as e:
                 logger.error(f"Failed to execute action {action}: {e}")
+
+    def _focus_window(self, name: str):
+        """Attempts to focus a window by its name."""
+        if not pwc:
+            logger.warning("pywinctl not installed, cannot focus window.")
+            return
+
+        try:
+            windows = pwc.getWindowsWithTitle(name)
+            if windows:
+                windows[0].activate()
+                logger.info(f"Focused window: {name}")
+            else:
+                # Try fuzzy match
+                all_titles = pwc.getAllTitles()
+                for title in all_titles:
+                    if name.lower() in title.lower():
+                        pwc.getWindowsWithTitle(title)[0].activate()
+                        logger.info(f"Focused window (fuzzy): {title}")
+                        return
+                logger.warning(f"No window found matching: {name}")
+        except Exception as e:
+            logger.error(f"Error focusing window {name}: {e}")
+
+    def get_system_state(self) -> Dict[str, Any]:
+        """Gathers information about the current OS state."""
+        state = {
+            "active_window": "",
+            "open_windows": []
+        }
+        if pwc:
+            try:
+                active = pwc.getActiveWindow()
+                state["active_window"] = active.title if active else ""
+                state["open_windows"] = pwc.getAllTitles()
+            except Exception:
+                pass
+        return state
 
 executor = Executor()

@@ -344,6 +344,9 @@ AVAILABLE TOOLS FOR tool_use
 "fetch_url": args: { "url": "" }
 "summarize_youtube_video": args: { "url": "" }
 "save_to_memory": args: { "text": "" }
+"os_list_files": args: { "directory": "." }
+"os_read_file": args: { "file_path": "" }
+"os_get_system_info": args: {}
 
 GENERAL REMINDERS
 ✅ Think before acting.

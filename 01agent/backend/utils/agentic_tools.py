@@ -97,6 +97,38 @@ async def summarize_youtube_video(url: str) -> str:
         raise CustomError(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Error summarizing video: {str(e)}")
 
 
+async def os_list_files(directory: str) -> str:
+    import os
+    try:
+        files = os.listdir(directory)
+        return "\n".join(files)
+    except Exception as e:
+        return f"Error listing files: {e}"
+
+
+async def os_read_file(file_path: str) -> str:
+    import os
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            return f.read(5000) # Limit to 5000 chars
+    except Exception as e:
+        return f"Error reading file: {e}"
+
+
+async def os_get_system_info() -> str:
+    import platform
+    import psutil
+    info = {
+        "system": platform.system(),
+        "release": platform.release(),
+        "version": platform.version(),
+        "machine": platform.machine(),
+        "cpu_count": psutil.cpu_count(),
+        "memory": f"{psutil.virtual_memory().total / (1024**3):.2f} GB"
+    }
+    return json.dumps(info, indent=2)
+
+
 async def run_tool_server_side(tool_name: str, args: dict) -> str:
     if tool_name == "fetch_url":
         return await fetch_and_summarize_url(args["url"])
@@ -106,5 +138,14 @@ async def run_tool_server_side(tool_name: str, args: dict) -> str:
 
     if tool_name == "summarize_youtube_video":
         return await summarize_youtube_video(args["url"])
+
+    if tool_name == "os_list_files":
+        return await os_list_files(args.get("directory", "."))
+
+    if tool_name == "os_read_file":
+        return await os_read_file(args.get("file_path"))
+
+    if tool_name == "os_get_system_info":
+        return await os_get_system_info()
 
     raise ValueError(f"Unsupported tool: {tool_name}")

@@ -264,10 +264,15 @@ class EnhancedAIAgent:
             except:
                 pass
             
+            # Get window management info
+            os_state = executor.get_system_state()
+
             return {
                 'current_os': os.name,
                 'current_interactive_elements': [],  # Simplified for speed
-                'current_running_apps': running_apps[:20]
+                'current_running_apps': running_apps[:20],
+                'active_window': os_state.get('active_window'),
+                'open_windows': os_state.get('open_windows', [])[:15]
             }
             
         except Exception as e:
