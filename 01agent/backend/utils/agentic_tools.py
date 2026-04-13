@@ -1,213 +1,149 @@
-from langchain_community.document_loaders import UnstructuredPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import WebBaseLoader
-from langchain_core.prompts import ChatPromptTemplate
+import os
+import json
+import subprocess
+import platform
+import psutil
+import pyperclip
 from youtube_transcript_api import YouTubeTranscriptApi
+from langchain_community.document_loaders import UnstructuredPDFLoader, WebBaseLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.prompts import ChatPromptTemplate
 from . import llm_provider
 
+# Tool Registry
+class ToolRegistry:
+    def __init__(self):
+        self.tools = {}
+        self.llm = llm_provider.get_llm(agent='summarizer', temperature=1.0)
 
-llm = llm_provider.get_llm(agent='summarizer', temperature=1.0)
+    def register(self, name: str):
+        def decorator(func):
+            self.tools[name] = func
+            return func
+        return decorator
 
+    async def execute(self, name: str, args: dict) -> str:
+        if name not in self.tools:
+            raise ValueError(f"Tool '{name}' not found in registry.")
+        return await self.tools[name](self, **args)
 
-async def fetch_and_summarize_url(url: str) -> str:
+registry = ToolRegistry()
+
+# Tool Implementations
+
+@registry.register("fetch_url")
+async def fetch_and_summarize_url(reg, url: str):
     loader = WebBaseLoader(url)
     documents = await loader.aload()
-
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
     docs = text_splitter.split_documents(documents)
-
     full_text = "\n\n".join(doc.page_content for doc in docs)
-
     prompt = ChatPromptTemplate.from_template("Summarize the following:\n\n{input}")
-    chain = prompt | llm
-
+    chain = prompt | reg.llm
     result = await chain.ainvoke({"input": full_text})
-    return result.content if hasattr(result, "content") else str(result)
+    return result.content
 
-
-async def fetch_and_summarize_pdf(file_path: str = None, url: str = None) -> str:
+@registry.register("read_pdf")
+async def fetch_and_summarize_pdf(reg, file_path: str = None, url: str = None):
     if url:
         import aiohttp
         import tempfile
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 response.raise_for_status()
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-                try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
                     temp_file.write(await response.read())
-                    temp_file.close()
                     file_path = temp_file.name
-                finally:
-                    # Ensure the file is closed before UnstructuredPDFLoader tries to open it
-                    temp_file.close()
 
     loader = UnstructuredPDFLoader(file_path)
     documents = loader.load()
-
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
     docs = text_splitter.split_documents(documents)
-
-    # Prepare the full text
     full_text = "\n\n".join(doc.page_content for doc in docs)
-
-    prompt = ChatPromptTemplate.from_template("Summarize the following:\n\n{input}")
-    chain = prompt | llm
-
+    prompt = ChatPromptTemplate.from_template("Summarize the following PDF content:\n\n{input}")
+    chain = prompt | reg.llm
     result = await chain.ainvoke({"input": full_text})
-    return result.content if hasattr(result, "content") else str(result)
+    return result.content
 
-
-async def summarize_youtube_video(url: str) -> str:
+@registry.register("summarize_youtube_video")
+async def summarize_youtube_video(reg, url: str):
     try:
-        # Extract video ID from URL
-        if "watch?v=" in url:
-            video_id = url.split("watch?v=")[-1].split("&")[0]
-        elif "youtu.be/" in url:
-            video_id = url.split("youtu.be/")[-1].split("?")[0]
-        else:
-            raise CustomError(status.HTTP_400_BAD_REQUEST, "Invalid YouTube URL format.")
+        video_id = url.split("watch?v=")[-1].split("&")[0] if "watch?v=" in url else url.split("/")[-1]
+        transcript_list = YouTubeTranscriptApi().list(video_id)
+        try: transcript = transcript_list.find_transcript(["en"])
+        except: transcript = next(iter(transcript_list))
 
-        ytt_api = YouTubeTranscriptApi()
-        transcript_list = ytt_api.list(video_id)
-
-        try:
-            # Try to find an English transcript first
-            transcript = transcript_list.find_transcript(["en"])
-        except Exception:
-            # If English not found, fallback to first available transcript
-            transcript = next(iter(transcript_list))
-
-        # Fetch the transcript content
         fetched = transcript.fetch()
-        transcript_text = "\n".join([snippet.text for snippet in fetched])
-
-        # Split the transcript into manageable chunks
+        transcript_text = "\n".join([s.text for s in fetched])
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-        chunks = text_splitter.create_documents([transcript_text])
-        full_text = "\n\n".join(chunk.page_content for chunk in chunks)
+        full_text = "\n\n".join([c.page_content for c in text_splitter.create_documents([transcript_text])])
 
-        # Use the LLM to summarize
-        prompt = ChatPromptTemplate.from_template("Summarize the following YouTube transcript:\n\n{input}")
-        chain = prompt | llm
+        prompt = ChatPromptTemplate.from_template("Summarize this YouTube transcript:\n\n{input}")
+        chain = prompt | reg.llm
         result = await chain.ainvoke({"input": full_text})
-
-        return result.content if hasattr(result, "content") else str(result)
-
+        return result.content
     except Exception as e:
-        raise CustomError(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Error summarizing video: {str(e)}")
+        return f"Error summarizing video: {e}"
 
+@registry.register("os_list_files")
+async def os_list_files(reg, directory: str = "."):
+    try: return "\n".join(os.listdir(directory))
+    except Exception as e: return f"Error: {e}"
 
-async def os_list_files(directory: str) -> str:
-    import os
-    try:
-        files = os.listdir(directory)
-        return "\n".join(files)
-    except Exception as e:
-        return f"Error listing files: {e}"
-
-
-async def os_read_file(file_path: str) -> str:
-    import os
+@registry.register("os_read_file")
+async def os_read_file(reg, file_path: str):
     try:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-            return f.read(10000) # Increased limit to 10000 chars
-    except Exception as e:
-        return f"Error reading file: {e}"
+            return f.read(10000)
+    except Exception as e: return f"Error: {e}"
 
-
-async def os_write_file(file_path: str, content: str) -> str:
-    import os
+@registry.register("os_write_file")
+async def os_write_file(reg, file_path: str, content: str):
     try:
-        directory = os.path.dirname(file_path)
-        if directory and not os.path.exists(directory):
-            os.makedirs(directory, exist_ok=True)
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        return f"Successfully wrote to {file_path}"
-    except Exception as e:
-        return f"Error writing file: {e}"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, 'w', encoding='utf-8') as f: f.write(content)
+        return f"Wrote to {file_path}"
+    except Exception as e: return f"Error: {e}"
 
-
-async def os_delete_file(file_path: str) -> str:
-    import os
+@registry.register("os_delete_file")
+async def os_delete_file(reg, file_path: str):
     try:
         if os.path.isdir(file_path):
             import shutil
             shutil.rmtree(file_path)
-            return f"Successfully deleted directory {file_path}"
-        os.remove(file_path)
-        return f"Successfully deleted file {file_path}"
-    except Exception as e:
-        return f"Error deleting: {e}"
+        else: os.remove(file_path)
+        return f"Deleted {file_path}"
+    except Exception as e: return f"Error: {e}"
 
-
-async def os_search_files(query: str, root: str = ".") -> str:
-    import os
+@registry.register("os_search_files")
+async def os_search_files(reg, query: str, root: str = "."):
     matches = []
     try:
         for r, d, f in os.walk(root):
             for file in f:
-                if query.lower() in file.lower():
-                    matches.append(os.path.join(r, file))
-            if len(matches) > 20: break # Limit results
-        return "\n".join(matches) if matches else "No files found matching query."
-    except Exception as e:
-        return f"Error searching: {e}"
+                if query.lower() in file.lower(): matches.append(os.path.join(r, file))
+            if len(matches) > 20: break
+        return "\n".join(matches) or "No matches."
+    except Exception as e: return f"Error: {e}"
 
-
-async def os_get_system_info() -> str:
-    import platform
-    import psutil
+@registry.register("os_get_system_info")
+async def os_get_system_info(reg):
     info = {
-        "system": platform.system(),
-        "release": platform.release(),
-        "version": platform.version(),
-        "machine": platform.machine(),
-        "cpu_count": psutil.cpu_count(),
-        "memory": f"{psutil.virtual_memory().total / (1024**3):.2f} GB"
+        "system": platform.system(), "release": platform.release(),
+        "cpu_count": psutil.cpu_count(), "memory": f"{psutil.virtual_memory().total / (1024**3):.2f} GB"
     }
     return json.dumps(info, indent=2)
 
+@registry.register("os_clipboard_get")
+async def os_clipboard_get(reg):
+    return pyperclip.paste()
+
+@registry.register("os_shell_execute")
+async def os_shell_execute(reg, command: str):
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
+        return f"STDOUT: {result.stdout}\nSTDERR: {result.stderr}"
+    except Exception as e: return f"Error: {e}"
 
 async def run_tool_server_side(tool_name: str, args: dict) -> str:
-    if tool_name == "fetch_url":
-        return await fetch_and_summarize_url(args["url"])
-
-    if tool_name == "read_pdf":
-        return await fetch_and_summarize_pdf(args.get("file_path"), args.get("url"))
-
-    if tool_name == "summarize_youtube_video":
-        return await summarize_youtube_video(args["url"])
-
-    if tool_name == "os_list_files":
-        return await os_list_files(args.get("directory", "."))
-
-    if tool_name == "os_read_file":
-        return await os_read_file(args.get("file_path"))
-
-    if tool_name == "os_write_file":
-        return await os_write_file(args.get("file_path"), args.get("content", ""))
-
-    if tool_name == "os_delete_file":
-        return await os_delete_file(args.get("file_path"))
-
-    if tool_name == "os_search_files":
-        return await os_search_files(args.get("query"), args.get("root", "."))
-
-    if tool_name == "os_get_system_info":
-        return await os_get_system_info()
-
-    if tool_name == "os_clipboard_get":
-        import pyperclip
-        return pyperclip.paste()
-
-    if tool_name == "os_shell_execute":
-        import subprocess
-        try:
-            # Note: server-side execution can be risky, but this is a local assistant
-            result = subprocess.run(args["command"], shell=True, capture_output=True, text=True, timeout=30)
-            return f"STDOUT: {result.stdout}\nSTDERR: {result.stderr}"
-        except Exception as e:
-            return f"Error: {e}"
-
-    raise ValueError(f"Unsupported tool: {tool_name}")
+    return await registry.execute(tool_name, args)

@@ -5,7 +5,7 @@ import _01agent_logo_ic_only from '../assets/01agent_logo_ic_only.png';
 import { AvatarButton, IconButton } from '../components/Elements/Button';
 import { useSelector } from 'react-redux';
 import axios from '../utils/axios';
-import { FaStopCircle } from 'react-icons/fa';
+import { FaStopCircle, FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import constants from '../utils/constants';
 import { MdOutlineSchedule } from 'react-icons/md';
 import { GiBrain } from 'react-icons/gi';
@@ -164,6 +164,7 @@ export default function Overlay() {
   const [backgroundMode, setBackgroundMode] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(false);
   const [activeAction, setActiveAction] = useState(null);
+  const [isListening, setIsListening] = useState(false);
 
   const accessToken = useSelector(state => state.accessToken);
   const isDarkMode = useSelector(state => state.isDarkMode);
@@ -267,6 +268,37 @@ export default function Overlay() {
         window.location.reload();
       }
     });
+  };
+
+  const toggleVoice = () => {
+    if (isListening) {
+      setIsListening(false);
+    } else {
+      startListening();
+    }
+  };
+
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (e) => {
+      console.error(e);
+      setIsListening(false);
+    };
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      setMessageText(transcript);
+    };
+
+    recognition.start();
   };
 
   const onBGModeToggleChange = async (value) => {
@@ -382,6 +414,16 @@ export default function Overlay() {
                     onClick={() => setThinkingMode(!thinkingMode)}
                   >
                     <GiBrain />
+                  </ModeToggle>
+                </ToggleContainer>
+                <div style={{width: '5px'}} />
+                <ToggleContainer>
+                  <ModeToggle
+                    active={isListening}
+                    isDarkMode={isDarkMode}
+                    onClick={toggleVoice}
+                  >
+                    {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
                   </ModeToggle>
                 </ToggleContainer>
               </>

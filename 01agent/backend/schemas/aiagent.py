@@ -7,6 +7,9 @@ class NextStepRequest(BaseModel):
     current_interactive_elements: list[dict] = []
     current_os: str
     current_running_apps: list[dict] = []
+    active_window: Optional[str] = None
+    open_windows: list[str] = []
+    last_action_results: Optional[list[dict]] = None
 
 
 class BackgroundNextStepRequest(BaseModel):

@@ -21,3 +21,5 @@ pywinctl
 pyttsx3
 pygetwindow
 pyrect
+pyautogui
+pyperclip

@@ -203,6 +203,7 @@ class EnhancedAIAgent:
         
         logger.info(f"Starting subtask {subtask_id}: {subtask_text}")
 
+        last_results = None
         while self.is_running:
             start_time = time.time()
             
@@ -210,7 +211,7 @@ class EnhancedAIAgent:
             screenshot_b64 = await self._take_screenshot_optimized()
             
             # Get next steps from backend
-            response_data = await self._get_next_step_from_backend(screenshot_b64)
+            response_data = await self._get_next_step_from_backend(screenshot_b64, last_results)
             
             if not response_data:
                 logger.error("Failed to get response from backend")
@@ -226,7 +227,7 @@ class EnhancedAIAgent:
             for action in actions:
                 print(json.dumps({"event": "action", "data": action}), flush=True)
 
-            executor.execute_actions(actions)
+            last_results = executor.execute_actions(actions)
             
             # Update performance metrics
             execution_time = time.time() - start_time
@@ -243,7 +244,7 @@ class EnhancedAIAgent:
             # Small delay between steps to allow UI to settle
             await asyncio.sleep(0.5)
 
-    async def _get_next_step_from_backend(self, screenshot_b64: str) -> Optional[Dict[str, Any]]:
+    async def _get_next_step_from_backend(self, screenshot_b64: str, last_results: List[Dict] = None) -> Optional[Dict[str, Any]]:
         """Get the next actions from the backend."""
         try:
             url = f"{self.api_url}/aiagent/{self.thread_id}/next_step"
@@ -251,7 +252,8 @@ class EnhancedAIAgent:
             system_info = await self._get_system_info()
             payload = {
                 **system_info,
-                'screenshot_b64': screenshot_b64
+                'screenshot_b64': screenshot_b64,
+                'last_action_results': last_results
             }
             
             async with self.session.post(url, json=payload) as response:
