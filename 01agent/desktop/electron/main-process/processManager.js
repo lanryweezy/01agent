@@ -29,6 +29,11 @@ function startAiAgent(apiUrl, threadId, accessToken, mainWindow, overlayWindow) 
                 mainWindow?.webContents.send('agent-action', json.data);
                 overlayWindow?.webContents.send('agent-action', json.data);
             } catch (e) {}
+        } else if (str.includes('"event": "status"')) {
+            try {
+                const json = JSON.parse(str.trim());
+                mainWindow?.webContents.send('agent-status', json.data);
+            } catch (e) {}
         }
     });
 

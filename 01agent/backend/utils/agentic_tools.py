@@ -110,9 +110,49 @@ async def os_read_file(file_path: str) -> str:
     import os
     try:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-            return f.read(5000) # Limit to 5000 chars
+            return f.read(10000) # Increased limit to 10000 chars
     except Exception as e:
         return f"Error reading file: {e}"
+
+
+async def os_write_file(file_path: str, content: str) -> str:
+    import os
+    try:
+        directory = os.path.dirname(file_path)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        return f"Successfully wrote to {file_path}"
+    except Exception as e:
+        return f"Error writing file: {e}"
+
+
+async def os_delete_file(file_path: str) -> str:
+    import os
+    try:
+        if os.path.isdir(file_path):
+            import shutil
+            shutil.rmtree(file_path)
+            return f"Successfully deleted directory {file_path}"
+        os.remove(file_path)
+        return f"Successfully deleted file {file_path}"
+    except Exception as e:
+        return f"Error deleting: {e}"
+
+
+async def os_search_files(query: str, root: str = ".") -> str:
+    import os
+    matches = []
+    try:
+        for r, d, f in os.walk(root):
+            for file in f:
+                if query.lower() in file.lower():
+                    matches.append(os.path.join(r, file))
+            if len(matches) > 20: break # Limit results
+        return "\n".join(matches) if matches else "No files found matching query."
+    except Exception as e:
+        return f"Error searching: {e}"
 
 
 async def os_get_system_info() -> str:
@@ -145,11 +185,29 @@ async def run_tool_server_side(tool_name: str, args: dict) -> str:
     if tool_name == "os_read_file":
         return await os_read_file(args.get("file_path"))
 
+    if tool_name == "os_write_file":
+        return await os_write_file(args.get("file_path"), args.get("content", ""))
+
+    if tool_name == "os_delete_file":
+        return await os_delete_file(args.get("file_path"))
+
+    if tool_name == "os_search_files":
+        return await os_search_files(args.get("query"), args.get("root", "."))
+
     if tool_name == "os_get_system_info":
         return await os_get_system_info()
 
     if tool_name == "os_clipboard_get":
         import pyperclip
         return pyperclip.paste()
+
+    if tool_name == "os_shell_execute":
+        import subprocess
+        try:
+            # Note: server-side execution can be risky, but this is a local assistant
+            result = subprocess.run(args["command"], shell=True, capture_output=True, text=True, timeout=30)
+            return f"STDOUT: {result.stdout}\nSTDERR: {result.stderr}"
+        except Exception as e:
+            return f"Error: {e}"
 
     raise ValueError(f"Unsupported tool: {tool_name}")

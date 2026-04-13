@@ -7,6 +7,9 @@ import pyperclip
 import platform
 import webbrowser
 import ctypes
+import pyttsx3
+import threading
+import json
 from typing import Dict, List, Any
 
 # Cross-platform window management
@@ -29,6 +32,8 @@ class Executor:
     def __init__(self):
         self.system = platform.system().lower()
         self._scale_factor = self._get_dpi_scale()
+        self._tts_engine = pyttsx3.init()
+        self._tts_engine.setProperty('rate', 150) # Set speaking rate
         logger.info(f"Executor initialized for {self.system} with scale factor {self._scale_factor}")
 
     def _get_dpi_scale(self) -> float:
@@ -149,6 +154,17 @@ class Executor:
                 elif action == "clipboard_set":
                     pyperclip.copy(params.get("text", ""))
 
+                elif action == "speak":
+                    text = params.get("text")
+                    if text:
+                        threading.Thread(target=self._speak, args=(text,), daemon=True).start()
+
+                elif action == "shell_execute":
+                    command = params.get("command")
+                    result = self._run_shell(command)
+                    # We can send this result back to backend via a special event or memory
+                    print(json.dumps({"event": "shell_result", "data": result}), flush=True)
+
                 elif action == "window_move":
                     self._move_window(params.get("title"), params.get("x"), params.get("y"))
 
@@ -201,6 +217,14 @@ class Executor:
             win.resizeTo(width, height)
             logger.info(f"Resized window '{win.title}' to {width}x{height}")
 
+    def _speak(self, text: str):
+        """Internal method for TTS speaking."""
+        try:
+            self._tts_engine.say(text)
+            self._tts_engine.runAndWait()
+        except Exception as e:
+            logger.error(f"TTS Error: {e}")
+
     def _window_action(self, title: str, action: str):
         win = self._get_window(title)
         if win:
@@ -208,6 +232,20 @@ class Executor:
             elif action == "maximize": win.maximize()
             elif action == "restore": win.restore()
             logger.info(f"Performed {action} on window '{win.title}'")
+
+    def _run_shell(self, command: str) -> Dict[str, Any]:
+        """Executes a shell command and returns output."""
+        try:
+            # Use appropriate shell
+            shell = True if self.system == "windows" else False
+            process = subprocess.run(command, shell=shell, capture_output=True, text=True, timeout=30)
+            return {
+                "stdout": process.stdout,
+                "stderr": process.stderr,
+                "returncode": process.returncode
+            }
+        except Exception as e:
+            return {"error": str(e)}
 
     def get_system_state(self) -> Dict[str, Any]:
         """Gathers information about the current OS state."""

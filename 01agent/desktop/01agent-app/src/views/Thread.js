@@ -91,6 +91,7 @@ export default function Thread() {
 
   const accessToken = useSelector(state => state.accessToken);
   const isDarkMode = useSelector(state => state.isDarkMode);
+  const [agentStatus, setAgentStatus] = useState(null);
 
   const { tid } = useParams();
 
@@ -296,6 +297,14 @@ export default function Thread() {
     asyncTask();
   }, []);
 
+  useEffect(() => {
+    if (window.electronAPI?.onAgentStatus) {
+      window.electronAPI.onAgentStatus((data) => {
+        setAgentStatus(data);
+      });
+    }
+  }, []);
+
   return thread !== null ? (
     <>
       <ThreadDialog
@@ -312,7 +321,8 @@ export default function Thread() {
         onYesClicked={deleteThread}
         isDarkMode={isDarkMode}
       />
-      <ThreadDiv>
+      <ThreadDiv style={{ flexDirection: 'row' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Header>
           <Text fontSize='20px' fontWeight='600' color={'var(--text-light)'}>
             {thread.title}
@@ -391,6 +401,39 @@ export default function Thread() {
               )}
             </div>
           </SendingContainer>
+        </div>
+        </div>
+
+        {/* System Context Sidebar */}
+        <div style={{
+          width: '240px',
+          borderLeft: '1px solid var(--border-dark)',
+          padding: '15px',
+          background: 'rgba(0,0,0,0.1)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '15px'
+        }}>
+          <div>
+            <Text fontSize='14px' fontWeight='700' color='var(--sci-fi-green)'>SYSTEM STATUS</Text>
+            {agentStatus ? (
+              <div style={{ marginTop: '10px', fontSize: '12px' }}>
+                <div style={{ marginBottom: '5px' }}>CPU: {agentStatus.cpu.toFixed(1)}%</div>
+                <div style={{ marginBottom: '5px' }}>MEM: {agentStatus.memory.toFixed(1)}%</div>
+                <div style={{ color: 'var(--sci-fi-green)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  ACTIVE: {agentStatus.active_window || 'Desktop'}
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginTop: '10px', fontSize: '12px', opacity: 0.5 }}>Connecting...</div>
+            )}
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          <div style={{ fontSize: '11px', opacity: 0.4 }}>
+            01Agent v2.0 - High Performance
+          </div>
         </div>
       </ThreadDiv>
     </>

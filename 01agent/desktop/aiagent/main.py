@@ -154,9 +154,24 @@ class EnhancedAIAgent:
         while self.is_running:
             try:
                 # Get current system metrics
-                await self.resource_monitor.get_current_metrics()
-                # Monitor every 5 seconds
-                await asyncio.sleep(5.0)
+                metrics = await self.resource_monitor.get_current_metrics()
+
+                # Get window management info
+                os_state = executor.get_system_state()
+
+                status_update = {
+                    "event": "status",
+                    "data": {
+                        "cpu": metrics.cpu_percent,
+                        "memory": metrics.memory_percent,
+                        "active_window": os_state.get('active_window'),
+                        "timestamp": time.time()
+                    }
+                }
+                print(json.dumps(status_update), flush=True)
+
+                # Monitor every 2 seconds for smoother UI
+                await asyncio.sleep(2.0)
             except Exception as e:
                 logger.error(f"Error in system monitoring: {e}")
                 await asyncio.sleep(5.0)

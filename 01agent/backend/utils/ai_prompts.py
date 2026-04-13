@@ -347,6 +347,9 @@ Use focus_app to switch to an already running app and bring it in focus without 
 request_screenshot
 → { "action": "request_screenshot" }
 
+speak
+→ { "action": "speak", "params": { "text": "Task completed successfully" } }
+
 tool_use
 → { "action": "tool_use", "params": { "tool": "save_to_memory", "args": {} } }
 
@@ -361,6 +364,10 @@ AVAILABLE TOOLS FOR tool_use
 "save_to_memory": args: { "text": "" }
 "os_list_files": args: { "directory": "." }
 "os_read_file": args: { "file_path": "" }
+"os_write_file": args: { "file_path": "", "content": "" }
+"os_delete_file": args: { "file_path": "" }
+"os_search_files": args: { "query": "", "root": "." }
+"os_shell_execute": args: { "command": "" }
 "os_get_system_info": args: {}
 "os_clipboard_get": args: {}
 
