@@ -6,6 +6,7 @@ import pyautogui
 import pyperclip
 import platform
 import webbrowser
+import ctypes
 from typing import Dict, List, Any
 
 # Cross-platform window management
@@ -27,7 +28,28 @@ class Executor:
 
     def __init__(self):
         self.system = platform.system().lower()
-        logger.info(f"Executor initialized for {self.system}")
+        self._scale_factor = self._get_dpi_scale()
+        logger.info(f"Executor initialized for {self.system} with scale factor {self._scale_factor}")
+
+    def _get_dpi_scale(self) -> float:
+        """Determines the system DPI scaling factor."""
+        if self.system == "windows":
+            try:
+                # Get DPI of the primary monitor
+                hdc = ctypes.windll.user32.GetDC(0)
+                dpi = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88) # 88 = LOGPIXELSX
+                ctypes.windll.user32.ReleaseDC(0, hdc)
+                return dpi / 96.0
+            except Exception:
+                return 1.0
+        return 1.0
+
+    def _map_coords(self, x: int, y: int) -> tuple:
+        """Maps logical coordinates to physical coordinates if needed."""
+        # pyautogui usually handles scaling on macOS/Linux, but Windows often needs explicit mapping
+        if self.system == "windows":
+            return int(x / self._scale_factor), int(y / self._scale_factor)
+        return x, y
 
     def execute_actions(self, actions: List[Dict[str, Any]]):
         """Executes a list of actions sequentially."""
@@ -39,25 +61,32 @@ class Executor:
 
             try:
                 if action == "mouse_move":
-                    pyautogui.moveTo(params.get("x"), params.get("y"))
+                    x, y = self._map_coords(params.get("x"), params.get("y"))
+                    pyautogui.moveTo(x, y)
 
                 elif action == "left_click":
-                    pyautogui.click(params.get("x"), params.get("y"), button='left')
+                    x, y = self._map_coords(params.get("x"), params.get("y"))
+                    pyautogui.click(x, y, button='left')
 
                 elif action == "double_click":
-                    pyautogui.doubleClick(params.get("x"), params.get("y"))
+                    x, y = self._map_coords(params.get("x"), params.get("y"))
+                    pyautogui.doubleClick(x, y)
 
                 elif action == "triple_click":
-                    pyautogui.tripleClick(params.get("x"), params.get("y"))
+                    x, y = self._map_coords(params.get("x"), params.get("y"))
+                    pyautogui.tripleClick(x, y)
 
                 elif action == "right_click":
-                    pyautogui.click(params.get("x"), params.get("y"), button='right')
+                    x, y = self._map_coords(params.get("x"), params.get("y"))
+                    pyautogui.click(x, y, button='right')
 
                 elif action == "left_click_drag":
                     from_pos = params.get("from", {})
                     to_pos = params.get("to", {})
-                    pyautogui.moveTo(from_pos.get("x"), from_pos.get("y"))
-                    pyautogui.dragTo(to_pos.get("x"), to_pos.get("y"), button='left')
+                    fx, fy = self._map_coords(from_pos.get("x"), from_pos.get("y"))
+                    tx, ty = self._map_coords(to_pos.get("x"), to_pos.get("y"))
+                    pyautogui.moveTo(fx, fy)
+                    pyautogui.dragTo(tx, ty, button='left')
 
                 elif action == "left_mouse_down":
                     pyautogui.mouseDown(button='left')
@@ -116,6 +145,9 @@ class Executor:
                     url = params.get("url", "https://www.google.com")
                     webbrowser.open(url)
 
+                elif action == "clipboard_set":
+                    pyperclip.copy(params.get("text", ""))
+
                 elif action == "request_screenshot":
                     pass
 
@@ -155,8 +187,14 @@ class Executor:
         """Gathers information about the current OS state."""
         state = {
             "active_window": "",
-            "open_windows": []
+            "open_windows": [],
+            "clipboard_content": ""
         }
+        try:
+            state["clipboard_content"] = pyperclip.paste()[:1000]
+        except Exception:
+            pass
+
         if pwc:
             try:
                 active = pwc.getActiveWindow()

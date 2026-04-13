@@ -40,6 +40,24 @@ const Performance = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
+    if (window.electronAPI?.onAgentAction) {
+      window.electronAPI.onAgentAction((data) => {
+        setPerformanceData(prev => ({
+          ...prev,
+          executionStream: [
+            {
+              time: new Date().toLocaleTimeString(),
+              action: `Execute: ${data.action}`,
+              status: 'success'
+            },
+            ...(prev.executionStream || []).slice(0, 19)
+          ]
+        }));
+      });
+    }
+  }, []);
+
+  useEffect(() => {
     loadPerformanceData();
     
     let interval;

@@ -202,12 +202,15 @@ class EnhancedAIAgent:
                 break
 
             actions = response_data.get('actions', [])
-            
+
             # Check for terminal actions
             is_completed = any(a.get('action') == 'subtask_completed' for a in actions)
             is_failed = any(a.get('action') == 'subtask_failed' for a in actions)
             
             # Execute actions
+            for action in actions:
+                print(json.dumps({"event": "action", "data": action}), flush=True)
+
             executor.execute_actions(actions)
             
             # Update performance metrics

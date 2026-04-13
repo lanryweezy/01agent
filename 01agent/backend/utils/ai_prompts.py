@@ -322,6 +322,9 @@ wait
 launch_browser
 → { "action": "launch_browser", "params": { "url": "https://www.google.com" } }
 
+clipboard_set
+→ { "action": "clipboard_set", "params": { "text": "Some text" } }
+
 launch_app
 → { "action": "launch_app", "params": { "app_name": "e.g. Notepad, Include only the app name without any extensions." } }
 
@@ -347,6 +350,7 @@ AVAILABLE TOOLS FOR tool_use
 "os_list_files": args: { "directory": "." }
 "os_read_file": args: { "file_path": "" }
 "os_get_system_info": args: {}
+"os_clipboard_get": args: {}
 
 GENERAL REMINDERS
 ✅ Think before acting.

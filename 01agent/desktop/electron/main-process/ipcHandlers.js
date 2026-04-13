@@ -193,7 +193,17 @@ function registerIpcHandlers(store, mainWindow, overlayWindow, bgSetupWindow, bg
         overlayWindow?.webContents.send('ai-agent-launch', threadId);
         expandMinimizeOverlay(overlayWindow, true, false);
 
-        aiagentProcess.stdout.on('data', (data) => console.log(`[Agent stdout]: ${data}`));
+        aiagentProcess.stdout.on('data', (data) => {
+            const str = data.toString();
+            console.log(`[Agent stdout]: ${str}`);
+            if (str.includes('"event": "action"')) {
+                try {
+                    const json = JSON.parse(str.trim());
+                    mainWindow?.webContents.send('agent-action', json.data);
+                    overlayWindow?.webContents.send('agent-action', json.data);
+                } catch (e) {}
+            }
+        });
         aiagentProcess.stderr.on('data', (data) => console.error(`[Agent stderr]: ${data}`));
 
         aiagentProcess.on('error', err => {

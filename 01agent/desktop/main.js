@@ -15,12 +15,9 @@ import {
   bgAgentWindow,
 } from './electron/main-process/windowManager.js';
 import {
-  startBackgroundAuthServices,
-  cleanupBackgroundAuthServices,
-  cleanupBGAgent,
+  startAiAgent,
   stopAiAgent,
   aiagentProcess,
-  bgAuthProcess,
 } from './electron/main-process/processManager.js';
 import { registerIpcHandlers } from './electron/main-process/ipcHandlers.js';
 
@@ -72,15 +69,6 @@ const createAppMenu = () => {
     {
       label: 'App',
       submenu: [
-        {
-          label: 'Background Mode Authentication',
-          click: () => {
-            if ((aiagentProcess && !aiagentProcess.killed) || (bgAuthProcess && !bgAuthProcess.killed)) {
-              return;
-            }
-            launchBackgroundAuthWindow(cleanupBackgroundAuthServices, waitForNoVNCPortReady, startBackgroundAuthServices);
-          },
-        },
         {
           label: 'Logout',
           click: () => {

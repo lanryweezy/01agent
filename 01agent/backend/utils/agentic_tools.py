@@ -148,4 +148,8 @@ async def run_tool_server_side(tool_name: str, args: dict) -> str:
     if tool_name == "os_get_system_info":
         return await os_get_system_info()
 
+    if tool_name == "os_clipboard_get":
+        import pyperclip
+        return pyperclip.paste()
+
     raise ValueError(f"Unsupported tool: {tool_name}")

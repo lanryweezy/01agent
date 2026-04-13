@@ -2,69 +2,49 @@ import { spawn, exec } from 'child_process';
 import kill from 'tree-kill';
 
 let aiagentProcess;
-let bgAuthProcess;
 
-function startBackgroundAuthServices() {
-  bgAuthProcess = spawn('wsl', ['-d', 'NeuralOS', '--', 'bash', '/agent/background_mode_authentication.sh']);
+function startAiAgent(apiUrl, threadId, accessToken) {
+    if (aiagentProcess && !aiagentProcess.killed) return;
 
-  bgAuthProcess.stdout.on('data', data => {
-    console.log(`[BG Auth]: ${data.toString()}`);
-  });
+    const env = {
+        ...process.env,
+        '01AGENT_API_URL': apiUrl,
+        '01AGENT_THREAD_ID': threadId,
+        '01AGENT_USER_ACCESS_TOKEN': accessToken,
+        PYTHONUNBUFFERED: '1'
+    };
 
-  bgAuthProcess.stderr.on('data', data => {
-    console.error(`[BG Auth ERROR]: ${data.toString()}`);
-  });
-}
+    const pythonPath = process.platform === 'win32' ? 'python' : 'python3';
+    const agentScript = path.join(process.cwd(), 'aiagent', 'main.py');
 
-function cleanupBackgroundAuthServices() {
-    exec('wsl -d NeuralOS -- bash /agent/background_mode_authentication_cleanup.sh', (err) => {
-        if (err) {
-        console.error('[BG Auth]: Cleanup failed:', err);
-        } else {
-        console.log('[BG Auth]: Cleanup script executed.');
-        }
+    aiagentProcess = spawn(pythonPath, [agentScript], { env });
+
+    aiagentProcess.stdout.on('data', (data) => {
+        console.log(`[Agent]: ${data.toString()}`);
     });
 
-    if (bgAuthProcess) {
-        if (!bgAuthProcess.killed) {
-        bgAuthProcess.kill('SIGKILL');
-        }
-    }
-    bgAuthProcess = null;
-}
-
-function cleanupBGAgent() {
-    exec('wsl -d NeuralOS -- bash /agent/stop_bg_agent.sh', (err) => {
-        if (err) {
-        console.error('[BG Agent]: Cleanup failed:', err);
-        } else {
-        console.log('[BG Agent]: Cleanup script executed.');
-        }
+    aiagentProcess.stderr.on('data', (data) => {
+        console.error(`[Agent Error]: ${data.toString()}`);
     });
 
-    if (aiagentProcess) {
-        if (!aiagentProcess.killed) {
-        aiagentProcess.kill('SIGKILL');
-        }
-    }
+    aiagentProcess.on('close', (code) => {
+        console.log(`[Agent] process exited with code ${code}`);
+        aiagentProcess = null;
+    });
 }
 
 function stopAiAgent() {
     if (aiagentProcess && !aiagentProcess.killed) {
         kill(aiagentProcess.pid, 'SIGKILL', (err) => {
             if (err) console.error('❌ Failed to kill agent:', err);
-            else console.log('[✅ Agent forcibly stopped]');
+            else console.log('[✅ Agent stopped]');
         });
     }
     aiagentProcess = null;
-    cleanupBGAgent();
 }
 
 export {
-    startBackgroundAuthServices,
-    cleanupBackgroundAuthServices,
-    cleanupBGAgent,
+    startAiAgent,
     stopAiAgent,
-    aiagentProcess,
-    bgAuthProcess,
+    aiagentProcess
 };
