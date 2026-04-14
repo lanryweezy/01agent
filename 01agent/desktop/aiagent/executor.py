@@ -1,4 +1,4 @@
-import logging, time, os, subprocess, pyautogui, pyperclip, platform, webbrowser, ctypes, pyttsx3, threading, json, psutil
+import logging, time, os, subprocess, pyautogui, pyperclip, platform, webbrowser, ctypes, pyttsx3, threading, json, psutil, mss
 try: import pywinctl as pwc
 except ImportError: pwc = None
 logger = logging.getLogger(__name__)
@@ -7,6 +7,7 @@ pyautogui.FAILSAFE = True
 class Executor:
     def __init__(self):
         self.system = platform.system().lower(); self._scale_factor = self._get_dpi_scale()
+        self._monitors = mss.mss().monitors
         try: self._tts_engine = pyttsx3.init(); self._tts_engine.setProperty('rate', 150)
         except Exception: self._tts_engine = None
 
@@ -70,9 +71,14 @@ class Executor:
         if win: win.moveTo(x, y)
 
     def get_system_state(self):
-        state = {"active_window": "", "open_windows": [], "clipboard_content": ""}
+        state = {"active_window": "", "open_windows": [], "clipboard_content": "", "monitors": []}
         try: state["clipboard_content"] = pyperclip.paste()[:500]
         except Exception: pass
+
+        # Monitor info
+        for i, m in enumerate(self._monitors):
+            state["monitors"].append({"id": i, "width": m["width"], "height": m["height"], "left": m["left"], "top": m["top"]})
+
         if pwc:
             try:
                 active = pwc.getActiveWindow()

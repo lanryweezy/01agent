@@ -92,7 +92,20 @@ class EnhancedAIAgent:
 
     async def _get_system_info(self):
         s = executor.get_system_state()
-        return {'current_os': os.name, 'current_running_apps': [], 'active_window': s.get('active_window'), 'open_windows': s.get('open_windows', [])[:15], 'clipboard': s.get('clipboard_content')}
+
+        # Deep Browser Context
+        browser_tree = None
+        if "chrome" in (s.get('active_window') or "").lower():
+            browser_tree = await browser_automation.get_accessibility_tree()
+
+        return {
+            'current_os': os.name,
+            'current_running_apps': [],
+            'active_window': s.get('active_window'),
+            'open_windows': s.get('open_windows', [])[:15],
+            'clipboard': s.get('clipboard_content'),
+            'browser_accessibility_tree': browser_tree
+        }
 
     def _update_metrics(self, t, s):
         self.performance_metrics['total_tasks'] += 1

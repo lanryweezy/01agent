@@ -117,5 +117,17 @@ class BrowserAutomation:
             logger.error(f"Failed to get page content: {e}")
             return None
 
+    async def get_accessibility_tree(self) -> Optional[Dict[str, Any]]:
+        """Returns the accessibility tree for deep DOM precision."""
+        if not self._page:
+            return None
+        try:
+            tree = await self._page.accessibility.snapshot()
+            logger.info("Accessibility tree retrieved.")
+            return tree
+        except Exception as e:
+            logger.error(f"Failed to get accessibility tree: {e}")
+            return None
+
 # Global instance for easy access
 browser_automation = BrowserAutomation()

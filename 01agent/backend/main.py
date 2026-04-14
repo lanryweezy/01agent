@@ -10,6 +10,7 @@ from routers.aiagent.generic import router as aiagent_router
 from routers.apps.threads import router as threads_router
 from routers.aiagent.suggestor import router as suggestor_aiagent_router
 from routers.aiagent.background import router as bg_mode_aiagent_router
+from routers.apps.skills import router as skills_router
 from utils.procedures import CustomError
 from utils.error_handlers import (
     validation_exception_handler,
@@ -29,6 +30,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from config.settings import settings
 from config.logging import setup_logging
+from services.scheduler_service import automation_scheduler
 
 # Setup logging first
 logger = setup_logging()
@@ -103,12 +105,17 @@ app.add_exception_handler(Exception, general_exception_handler)
 
 app.include_router(userauth_router)
 app.include_router(threads_router)
+app.include_router(skills_router)
 app.include_router(suggestor_aiagent_router)
 app.include_router(bg_mode_aiagent_router)
 app.include_router(aiagent_router)
 
 
 
+
+@app.on_event("startup")
+async def startup_event():
+    automation_scheduler.start()
 
 @app.get('/')
 async def index():
