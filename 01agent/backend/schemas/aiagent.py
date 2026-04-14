@@ -10,6 +10,7 @@ class NextStepRequest(BaseModel):
     active_window: Optional[str] = None
     open_windows: list[str] = []
     last_action_results: Optional[list[dict]] = None
+    ocr_grounding: list[dict] = []
 
 
 class BackgroundNextStepRequest(BaseModel):

@@ -20,20 +20,30 @@ function startAiAgent(apiUrl, threadId, accessToken, mainWindow, overlayWindow) 
 
     aiagentProcess = spawn(pythonPath, [agentScript], { env });
 
+    let buffer = '';
     aiagentProcess.stdout.on('data', (data) => {
-        const str = data.toString();
-        console.log(`[Agent]: ${str}`);
-        if (str.includes('"event": "action"')) {
-            try {
-                const json = JSON.parse(str.trim());
-                mainWindow?.webContents.send('agent-action', json.data);
-                overlayWindow?.webContents.send('agent-action', json.data);
-            } catch (e) {}
-        } else if (str.includes('"event": "status"')) {
-            try {
-                const json = JSON.parse(str.trim());
-                mainWindow?.webContents.send('agent-status', json.data);
-            } catch (e) {}
+        buffer += data.toString();
+        let lines = buffer.split('\n');
+        buffer = lines.pop(); // Keep partial line in buffer
+
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+            console.log(`[Agent]: ${line}`);
+
+            if (line.startsWith('{') && line.endsWith('}')) {
+                try {
+                    const json = JSON.parse(line);
+                    if (json.event === 'action') {
+                        mainWindow?.webContents.send('agent-action', json.data);
+                        overlayWindow?.webContents.send('agent-action', json.data);
+                    } else if (json.event === 'status') {
+                        mainWindow?.webContents.send('agent-status', json.data);
+                    }
+                } catch (e) {
+                    console.error('Failed to parse agent JSON line:', line, e);
+                }
+            }
         }
     });
 

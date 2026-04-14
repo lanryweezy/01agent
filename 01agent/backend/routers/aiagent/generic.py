@@ -263,6 +263,13 @@ async def next_step(tid: str, next_step_req: NextStepRequest, db: Session = Depe
             'type': 'text',
             'text': f'Last Action Execution Results: \n {json.dumps(next_step_req.last_action_results)}'
         })
+
+    if getattr(next_step_req, 'ocr_grounding', None):
+        computer_use_user_message.append({
+            'type': 'text',
+            'text': f'Local OCR Grounding (Precise text positions): \n {json.dumps(next_step_req.ocr_grounding)}'
+        })
+
     if len(action_history) > 0:
         computer_use_user_message.append({
             'type': 'text',

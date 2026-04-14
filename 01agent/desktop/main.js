@@ -1,4 +1,4 @@
-import { app, Menu, ipcMain, globalShortcut } from 'electron';
+import { app, Menu, Tray, ipcMain, globalShortcut, nativeImage } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import isDev from 'electron-is-dev';
@@ -28,6 +28,7 @@ const store = new Store();
 
 let mainWindow;
 let overlayWindow;
+let tray;
 let bgSetupWindow;
 let readyToClose = false;
 
@@ -108,6 +109,23 @@ if (!gotLock) {
 app.whenReady().then(() => {
   ensureDeviceId();
   mainWindow = createWindow(readyToClose, ipcMain);
+
+  // Create System Tray
+  const iconPath = path.join(__dirname, '01agent-app', 'public', 'favicon.ico');
+  const trayIcon = nativeImage.createFromPath(iconPath);
+  tray = new Tray(trayIcon);
+
+  const trayMenu = Menu.buildFromTemplate([
+    { label: 'Show App', click: () => mainWindow.show() },
+    { label: 'Quit', click: () => {
+        readyToClose = true;
+        app.quit();
+    }}
+  ]);
+
+  tray.setToolTip('01Agent AI Assistant');
+  tray.setContextMenu(trayMenu);
+  tray.on('click', () => mainWindow.show());
 
   // Register Global Hotkey: Alt+Space (or Command+Space on Mac) to focus/unfocus
   const shortcut = process.platform === 'darwin' ? 'Command+Space' : 'Alt+Space';

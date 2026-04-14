@@ -23,3 +23,6 @@ pygetwindow
 pyrect
 pyautogui
 pyperclip
+easyocr
+numpy
+opencv-python-headless
