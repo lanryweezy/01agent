@@ -30,4 +30,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onSetupComplete: (cb) => ipcRenderer.on('setup-complete', (_, result) => cb(result)),
   onAgentAction: (callback) => ipcRenderer.on('agent-action', (_, data) => callback(data)),
   onAgentStatus: (callback) => ipcRenderer.on('agent-status', (_, data) => callback(data)),
+  onSuggestionReceived: (callback) => ipcRenderer.on('suggestions-received', (_, data) => callback(data)),
 });

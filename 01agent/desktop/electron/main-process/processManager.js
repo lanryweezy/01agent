@@ -3,6 +3,7 @@ import path from 'path';
 import kill from 'tree-kill';
 
 let aiagentProcess;
+let suggestorProcess;
 
 function startAiAgent(apiUrl, threadId, accessToken, mainWindow, overlayWindow) {
     if (aiagentProcess && !aiagentProcess.killed) return;
@@ -57,6 +58,51 @@ function startAiAgent(apiUrl, threadId, accessToken, mainWindow, overlayWindow) 
     });
 }
 
+function startSuggestor(apiUrl, accessToken, mainWindow) {
+    if (suggestorProcess && !suggestorProcess.killed) return;
+
+    const env = {
+        ...process.env,
+        '01AGENT_API_URL': apiUrl,
+        '01AGENT_USER_ACCESS_TOKEN': accessToken,
+        PYTHONUNBUFFERED: '1'
+    };
+
+    const pythonPath = process.platform === 'win32' ? 'python' : 'python3';
+    const suggestorScript = path.join(process.cwd(), 'aiagent', 'aiagent_suggestor.py');
+
+    const runSuggestor = () => {
+        if (!accessToken) return;
+
+        suggestorProcess = spawn(pythonPath, [suggestorScript], { env });
+
+        let buffer = '';
+        suggestorProcess.stdout.on('data', (data) => {
+            buffer += data.toString();
+            try {
+                const lines = buffer.split('\n');
+                for (let i = 0; i < lines.length - 1; i++) {
+                    const line = lines[i].trim();
+                    if (line.startsWith('{')) {
+                        const json = JSON.parse(line);
+                        if (json.event === 'suggestions') {
+                            mainWindow?.webContents.send('suggestions-received', json.data);
+                        }
+                    }
+                }
+                buffer = lines[lines.length - 1];
+            } catch (e) {}
+        });
+
+        suggestorProcess.on('close', () => {
+            // Re-run after delay
+            setTimeout(runSuggestor, 30000); // Check every 30 seconds
+        });
+    };
+
+    runSuggestor();
+}
+
 function stopAiAgent() {
     if (aiagentProcess && !aiagentProcess.killed) {
         kill(aiagentProcess.pid, 'SIGKILL', (err) => {
@@ -70,5 +116,6 @@ function stopAiAgent() {
 export {
     startAiAgent,
     stopAiAgent,
+    startSuggestor,
     aiagentProcess
 };

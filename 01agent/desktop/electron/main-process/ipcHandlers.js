@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { expandMinimizeOverlay } from './windowManager.js';
-import { startAiAgent, stopAiAgent, aiagentProcess } from './processManager.js';
+import { startAiAgent, stopAiAgent, startSuggestor, aiagentProcess } from './processManager.js';
 import { loginWithGoogle } from './auth.js';
 import { setupBackgroundMode, isBackgroundModeReady } from '../utils/wslSetup.js';
 import { spawn } from 'child_process';
@@ -12,6 +12,9 @@ function registerIpcHandlers(store, mainWindow, overlayWindow, bgSetupWindow, bg
         if (!overlayWindow) {
             createOverlayWindow();
         }
+        // Start suggestor when token is set
+        const baseURL = `http://${process.env.REACT_APP_DNS || 'localhost:8001'}`;
+        startSuggestor(baseURL, token, mainWindow);
     });
 
     ipcMain.handle('get-token', () => store.get(constants.ACCESS_TOKEN_STORE_KEY));

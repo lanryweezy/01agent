@@ -199,6 +199,7 @@ class PlanSubtask(SQLModel, table=True):
     subtask_type: str = Field(default=SubtaskType.DESKTOP, nullable=False)
     ordering: Optional[int] = Field(nullable=False, default=0)
     status: Optional[str] = Field(nullable=False, default=SubtaskStatus.ACTIVE)
+    retry_count: int = Field(default=0)
 
     created_at: Optional[datetime.datetime] = Field(
         default_factory=utc_now,
