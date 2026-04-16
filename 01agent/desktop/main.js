@@ -1,4 +1,4 @@
-import { app, Menu, ipcMain } from 'electron';
+import { app, Menu, Tray, ipcMain, globalShortcut, nativeImage } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import isDev from 'electron-is-dev';
@@ -15,12 +15,9 @@ import {
   bgAgentWindow,
 } from './electron/main-process/windowManager.js';
 import {
-  startBackgroundAuthServices,
-  cleanupBackgroundAuthServices,
-  cleanupBGAgent,
+  startAiAgent,
   stopAiAgent,
   aiagentProcess,
-  bgAuthProcess,
 } from './electron/main-process/processManager.js';
 import { registerIpcHandlers } from './electron/main-process/ipcHandlers.js';
 
@@ -31,6 +28,7 @@ const store = new Store();
 
 let mainWindow;
 let overlayWindow;
+let tray;
 let bgSetupWindow;
 let readyToClose = false;
 
@@ -73,15 +71,6 @@ const createAppMenu = () => {
       label: 'App',
       submenu: [
         {
-          label: 'Background Mode Authentication',
-          click: () => {
-            if ((aiagentProcess && !aiagentProcess.killed) || (bgAuthProcess && !bgAuthProcess.killed)) {
-              return;
-            }
-            launchBackgroundAuthWindow(cleanupBackgroundAuthServices, waitForNoVNCPortReady, startBackgroundAuthServices);
-          },
-        },
-        {
           label: 'Logout',
           click: () => {
             if (overlayWindow) {
@@ -120,6 +109,37 @@ if (!gotLock) {
 app.whenReady().then(() => {
   ensureDeviceId();
   mainWindow = createWindow(readyToClose, ipcMain);
+
+  // Create System Tray
+  const iconPath = path.join(__dirname, '01agent-app', 'public', 'favicon.ico');
+  const trayIcon = nativeImage.createFromPath(iconPath);
+  tray = new Tray(trayIcon);
+
+  const trayMenu = Menu.buildFromTemplate([
+    { label: 'Show App', click: () => mainWindow.show() },
+    { label: 'Quit', click: () => {
+        readyToClose = true;
+        app.quit();
+    }}
+  ]);
+
+  tray.setToolTip('01Agent AI Assistant');
+  tray.setContextMenu(trayMenu);
+  tray.on('click', () => mainWindow.show());
+
+  // Register Global Hotkey: Alt+Space (or Command+Space on Mac) to focus/unfocus
+  const shortcut = process.platform === 'darwin' ? 'Command+Space' : 'Alt+Space';
+  globalShortcut.register(shortcut, () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible() && mainWindow.isFocused()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  });
+
   if (store.get(constants.ACCESS_TOKEN_STORE_KEY)) {
     overlayWindow = createOverlayWindow();
   }
@@ -136,6 +156,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     stopAiAgent();
+    globalShortcut.unregisterAll();
     if (process.platform !== 'darwin') app.quit();
 });
 

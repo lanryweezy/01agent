@@ -322,8 +322,23 @@ wait
 launch_browser
 → { "action": "launch_browser", "params": { "url": "https://www.google.com" } }
 
+clipboard_set
+→ { "action": "clipboard_set", "params": { "text": "Some text" } }
+
 launch_app
 → { "action": "launch_app", "params": { "app_name": "e.g. Notepad, Include only the app name without any extensions." } }
+
+focus_app
+→ { "action": "focus_app", "params": { "app_name": "Notepad" } }
+
+window_move
+→ { "action": "window_move", "params": { "title": "Notepad", "x": 100, "y": 100 } }
+
+window_resize
+→ { "action": "window_resize", "params": { "title": "Notepad", "width": 800, "height": 600 } }
+
+window_minimize, window_maximize, window_restore
+→ { "action": "window_minimize", "params": { "title": "Notepad" } }
 
 focus_app
 → { "action": "focus_app", "params": { "app_name": "e.g. Notepad, Include only the app name without any extensions." } }
@@ -331,6 +346,9 @@ Use focus_app to switch to an already running app and bring it in focus without 
 
 request_screenshot
 → { "action": "request_screenshot" }
+
+speak
+→ { "action": "speak", "params": { "text": "Task completed successfully" } }
 
 tool_use
 → { "action": "tool_use", "params": { "tool": "save_to_memory", "args": {} } }
@@ -344,6 +362,14 @@ AVAILABLE TOOLS FOR tool_use
 "fetch_url": args: { "url": "" }
 "summarize_youtube_video": args: { "url": "" }
 "save_to_memory": args: { "text": "" }
+"os_list_files": args: { "directory": "." }
+"os_read_file": args: { "file_path": "" }
+"os_write_file": args: { "file_path": "", "content": "" }
+"os_delete_file": args: { "file_path": "" }
+"os_search_files": args: { "query": "", "root": "." }
+"os_shell_execute": args: { "command": "" }
+"os_get_system_info": args: {}
+"os_clipboard_get": args: {}
 
 GENERAL REMINDERS
 ✅ Think before acting.

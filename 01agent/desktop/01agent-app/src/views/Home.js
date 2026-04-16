@@ -244,10 +244,39 @@ const StatItem = styled.div`
 `;
 
 
+const SuggestionsWrapper = styled.div`
+  display: flex;
+  gap: ${theme.spacing.sm_rem};
+  margin-top: ${theme.spacing.md_rem};
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: fadeIn 0.5s ease;
+`;
+
+const SuggestionChip = styled.div`
+  padding: 0.4rem 0.8rem;
+  background: ${props => props.isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'};
+  border: 1px solid ${props => props.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
+  border-radius: 20px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    background: ${theme.colors.primary}20;
+    border-color: ${theme.colors.primary};
+    transform: translateY(-2px);
+  }
+`;
+
 export default function Home() {
   const [messageText, setMessageText] = useState('');
   const [backgroundMode, setBackgroundMode] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
 
   const accessToken = useSelector(state => state.accessToken);
   const isDarkMode = useSelector(state => state.isDarkMode);
@@ -378,6 +407,16 @@ export default function Home() {
     asyncTask();
   }, [window.electronAPI]);
 
+  useEffect(() => {
+    if (window.electronAPI?.onSuggestionReceived) {
+      window.electronAPI.onSuggestionReceived((data) => {
+        if (data && data.suggestions) {
+          setSuggestions(data.suggestions);
+        }
+      });
+    }
+  }, []);
+
   const quickActions = [
     {
       icon: <FaBolt />,
@@ -422,6 +461,21 @@ export default function Home() {
           onChange={(e) => setMessageText(e.target.value)}
           onKeyDown={handleTextEnterKey}
         />
+
+        {suggestions.length > 0 && (
+          <SuggestionsWrapper>
+            {suggestions.map((s, i) => (
+              <SuggestionChip
+                key={i}
+                isDarkMode={isDarkMode}
+                onClick={() => setMessageText(s.ai_prompt || s.prompt)}
+              >
+                <MdLightbulb color={theme.colors.primary} />
+                {s.title}
+              </SuggestionChip>
+            ))}
+          </SuggestionsWrapper>
+        )}
         
         <ControlsRow>
           <ModeToggles>

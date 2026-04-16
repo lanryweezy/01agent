@@ -50,7 +50,7 @@ if %errorlevel% equ 0 (
     if exist "dist\*.exe" (
         for %%f in (dist\*.exe) do (
             echo    File: %%f
-            echo    Size: 
+            echo    Size:
             dir "%%f" | findstr /C:"%%~nxf"
         )
     )
@@ -60,11 +60,11 @@ if %errorlevel% equ 0 (
 ) else (
     echo ❌ Build failed
     echo Checking for common issues...
-    
+
     echo.
     echo Trying alternative build method...
     npx electron-builder --win
-    
+
     if %errorlevel% equ 0 (
         echo ✅ Alternative build succeeded!
     ) else (

@@ -100,7 +100,7 @@ Your desktop app features:
 You now have a fully functional desktop application that provides:
 
 ✅ **Interactive Dashboard** - Full agent control
-✅ **Performance Monitoring** - Real-time system stats  
+✅ **Performance Monitoring** - Real-time system stats
 ✅ **Task Management** - Automation controls
 ✅ **Backend Integration** - API communication
 ✅ **Modern Interface** - Beautiful, responsive design

@@ -99,12 +99,12 @@ if exist "dist" (
     echo ✅ Dist directory created
     dir dist /b
     echo.
-    
+
     if exist "dist\*.exe" (
         echo ✅ Windows installer found:
         for %%f in (dist\*.exe) do (
             echo    📦 %%~nxf
-            echo    📏 Size: 
+            echo    📏 Size:
             dir "%%f" | findstr /C:"%%~nxf"
         )
         goto :build_success

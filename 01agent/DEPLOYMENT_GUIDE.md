@@ -71,16 +71,16 @@ sudo systemctl reload apache2
 server {
     listen 80;
     server_name 01agent.ai;
-    
+
     location / {
         root /var/www/html;
         try_files $uri $uri/ /index.html;
     }
-    
+
     # Enable gzip compression
     gzip on;
     gzip_types text/css application/javascript application/json;
-    
+
     # Cache static assets
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
         expires 1y;
@@ -147,7 +147,7 @@ alembic upgrade head
 server {
     listen 80;
     server_name api.01agent.ai;
-    
+
     location / {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
@@ -330,23 +330,23 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'
-        
+
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
-        
+
     - name: Build project
       run: node build-complete-project.js
-      
+
     - name: Deploy to production
       run: |
         # Deploy commands here
@@ -426,7 +426,7 @@ upstream 01agent_backend {
 server {
     listen 443 ssl;
     server_name api.01agent.ai;
-    
+
     location / {
         proxy_pass http://01agent_backend;
     }
@@ -528,6 +528,6 @@ For deployment support:
 
 ---
 
-**01Agent Deployment Guide v2.0.0**  
-Last updated: December 2024  
+**01Agent Deployment Guide v2.0.0**
+Last updated: December 2024
 Built with ❤️ for maximum productivity

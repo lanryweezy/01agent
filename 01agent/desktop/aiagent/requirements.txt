@@ -17,3 +17,12 @@ opencv-python
 playwright
 playwright-stealth
 aiohttp
+pywinctl
+pyttsx3
+pygetwindow
+pyrect
+pyautogui
+pyperclip
+easyocr
+numpy
+opencv-python-headless

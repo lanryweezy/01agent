@@ -48,15 +48,15 @@ try {
     // Check Node.js
     const nodeVersion = execSync('node --version', { encoding: 'utf8' }).trim();
     console.log(`✅ Node.js: ${nodeVersion}`);
-    
+
     // Check Python
     const pythonVersion = execSync('python --version', { encoding: 'utf8' }).trim();
     console.log(`✅ Python: ${pythonVersion}`);
-    
+
     // Check npm
     const npmVersion = execSync('npm --version', { encoding: 'utf8' }).trim();
     console.log(`✅ npm: ${npmVersion}`);
-    
+
     console.log(`✅ Platform: ${platform} (${arch})`);
 } catch (error) {
     console.error('❌ Environment check failed:', error.message);
@@ -97,40 +97,40 @@ const buildResults = {};
 
 for (const [key, component] of Object.entries(components)) {
     console.log(`\n${component.icon} Building ${component.name}...`);
-    
+
     try {
         const componentPath = path.resolve(component.path);
-        
+
         if (!fs.existsSync(componentPath)) {
             console.log(`⚠️ Skipping ${component.name} - path not found: ${componentPath}`);
             buildResults[key] = { status: 'skipped', reason: 'Path not found' };
             continue;
         }
-        
+
         const buildStart = Date.now();
-        
+
         // Execute build command
         console.log(`   Running: ${component.buildCommand}`);
-        execSync(component.buildCommand, { 
-            stdio: 'inherit', 
+        execSync(component.buildCommand, {
+            stdio: 'inherit',
             cwd: componentPath,
             timeout: 300000 // 5 minutes timeout
         });
-        
+
         const buildTime = Date.now() - buildStart;
         console.log(`✅ ${component.name} built successfully (${buildTime}ms)`);
-        
-        buildResults[key] = { 
-            status: 'success', 
+
+        buildResults[key] = {
+            status: 'success',
             buildTime,
             path: componentPath
         };
-        
+
     } catch (error) {
         console.error(`❌ Failed to build ${component.name}:`, error.message);
-        buildResults[key] = { 
-            status: 'failed', 
-            error: error.message 
+        buildResults[key] = {
+            status: 'failed',
+            error: error.message
         };
     }
 }
@@ -144,32 +144,32 @@ for (const [key, component] of Object.entries(components)) {
         console.log(`⏭️ Skipping tests for ${component.name} (build failed)`);
         continue;
     }
-    
+
     console.log(`\n${component.icon} Testing ${component.name}...`);
-    
+
     try {
         const testStart = Date.now();
-        
+
         console.log(`   Running: ${component.testCommand}`);
-        execSync(component.testCommand, { 
-            stdio: 'inherit', 
+        execSync(component.testCommand, {
+            stdio: 'inherit',
             cwd: path.resolve(component.path),
             timeout: 180000 // 3 minutes timeout
         });
-        
+
         const testTime = Date.now() - testStart;
         console.log(`✅ ${component.name} tests passed (${testTime}ms)`);
-        
-        testResults[key] = { 
-            status: 'passed', 
-            testTime 
+
+        testResults[key] = {
+            status: 'passed',
+            testTime
         };
-        
+
     } catch (error) {
         console.warn(`⚠️ Tests failed for ${component.name}:`, error.message);
-        testResults[key] = { 
-            status: 'failed', 
-            error: error.message 
+        testResults[key] = {
+            status: 'failed',
+            error: error.message
         };
     }
 }
@@ -178,12 +178,12 @@ for (const [key, component] of Object.entries(components)) {
 console.log('\n📦 Creating Distribution Package...');
 try {
     const distDir = path.join(buildOutputDir, '01agent-complete');
-    
+
     if (fs.existsSync(distDir)) {
         fs.rmSync(distDir, { recursive: true, force: true });
     }
     fs.mkdirSync(distDir, { recursive: true });
-    
+
     // Copy built components
     const copyTasks = [
         {
@@ -217,7 +217,7 @@ try {
             condition: () => fs.existsSync('desktop/package.json')
         }
     ];
-    
+
     copyTasks.forEach(task => {
         if (task.condition()) {
             try {
@@ -230,14 +230,14 @@ try {
             console.log(`⏭️ Skipped ${task.from} (not found)`);
         }
     });
-    
+
     // Create deployment README
     const deploymentReadme = `# 01Agent Complete Distribution
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 16+ 
+- Node.js 16+
 - Python 3.8+
 - npm or yarn
 
@@ -291,13 +291,13 @@ Create \`.env\` files in:
 
 ## 📊 Build Results
 
-${Object.entries(buildResults).map(([key, result]) => 
+${Object.entries(buildResults).map(([key, result]) =>
     `- ${components[key].name}: ${result.status} ${result.buildTime ? `(${result.buildTime}ms)` : ''}`
 ).join('\n')}
 
 ## 🧪 Test Results
 
-${Object.entries(testResults).map(([key, result]) => 
+${Object.entries(testResults).map(([key, result]) =>
     `- ${components[key].name}: ${result.status} ${result.testTime ? `(${result.testTime}ms)` : ''}`
 ).join('\n')}
 
@@ -311,9 +311,9 @@ For support and documentation:
 ---
 Built with ❤️ by the 01Agent team
 `;
-    
+
     fs.writeFileSync(path.join(distDir, 'README.md'), deploymentReadme);
-    
+
     // Create package info
     const packageInfo = {
         name: '01agent-complete',
@@ -325,14 +325,14 @@ Built with ❤️ by the 01Agent team
         buildResults,
         testResults
     };
-    
+
     fs.writeFileSync(
-        path.join(distDir, 'build-info.json'), 
+        path.join(distDir, 'build-info.json'),
         JSON.stringify(packageInfo, null, 2)
     );
-    
+
     console.log(`✅ Distribution package created: ${distDir}`);
-    
+
 } catch (error) {
     console.error('❌ Failed to create distribution package:', error.message);
 }
@@ -375,8 +375,8 @@ ${result.error ? `- **Error**: ${result.error}` : ''}
 
 ## 🎯 Next Steps
 
-${successfulBuilds === totalBuilds ? 
-    '✅ All components built successfully! Ready for deployment.' : 
+${successfulBuilds === totalBuilds ?
+    '✅ All components built successfully! Ready for deployment.' :
     '⚠️ Some components failed to build. Check the errors above and retry.'
 }
 
@@ -412,13 +412,13 @@ console.log(`📋 Report: build-output/build-report.md`);
 if (successfulBuilds === totalBuilds) {
     console.log('\n🚀 All components built successfully!');
     console.log('Ready for deployment and distribution.');
-    
+
     // Success exit code
     process.exit(0);
 } else {
     console.log('\n⚠️  Some components failed to build.');
     console.log('Check the build report for details.');
-    
+
     // Warning exit code
     process.exit(1);
 }
