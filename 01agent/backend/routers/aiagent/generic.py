@@ -257,6 +257,19 @@ async def next_step(tid: str, next_step_req: NextStepRequest, db: Session = Depe
             'type': 'text',
             'text': f'Stored Memory Items: \n {json.dumps(memory_items_arr)}'
         })
+
+    if next_step_req.last_action_results:
+        computer_use_user_message.append({
+            'type': 'text',
+            'text': f'Last Action Execution Results: \n {json.dumps(next_step_req.last_action_results)}'
+        })
+
+    if getattr(next_step_req, 'ocr_grounding', None):
+        computer_use_user_message.append({
+            'type': 'text',
+            'text': f'Local OCR Grounding (Precise text positions): \n {json.dumps(next_step_req.ocr_grounding)}'
+        })
+
     if len(action_history) > 0:
         computer_use_user_message.append({
             'type': 'text',
@@ -339,32 +352,42 @@ async def next_step(tid: str, next_step_req: NextStepRequest, db: Session = Depe
             db.refresh(current_subtask)
 
         elif action_type == 'subtask_failed':
-            # Mark plan, task, and thread as failed
-            current_plan.status = ThreadTaskPlanStatus.FAILED
-            db.add(current_plan)
-            db.commit()
-            db.refresh(current_plan)
+            if current_subtask.retry_count < 2:
+                current_subtask.retry_count += 1
+                db.add(current_subtask)
+                db.commit()
+                db.refresh(current_subtask)
 
-            task.status = ThreadTaskStatus.FAILED
-            db.add(task)
-            db.commit()
-            db.refresh(task)
+                # We return the response as is, but we haven't marked the subtask as failed
+                # The next time the agent requests current_subtask, it will get the same one
+                # and can try again with the knowledge of previous failure.
+            else:
+                # Mark plan, task, and thread as failed
+                current_plan.status = ThreadTaskPlanStatus.FAILED
+                db.add(current_plan)
+                db.commit()
+                db.refresh(current_plan)
 
-            instance.status = ThreadStatus.STANDBY
-            db.add(instance)
-            db.commit()
-            db.refresh(instance)
+                task.status = ThreadTaskStatus.FAILED
+                db.add(task)
+                db.commit()
+                db.refresh(task)
 
-            ai_message = ThreadMessage(
-                thread_id=instance.id,
-                thread_task_id=task.id,
-                thread_chat_type=ThreadChatType.DESKTOP_USE,
-                thread_chat_from=ThreadChatFromChoices.FROM_AI,
-                text=json.dumps({'actions': [{'action': 'task_failed'}]}),
-            )
-            db.add(ai_message)
-            db.commit()
-            db.refresh(ai_message)
+                instance.status = ThreadStatus.STANDBY
+                db.add(instance)
+                db.commit()
+                db.refresh(instance)
+
+                ai_message = ThreadMessage(
+                    thread_id=instance.id,
+                    thread_task_id=task.id,
+                    thread_chat_type=ThreadChatType.DESKTOP_USE,
+                    thread_chat_from=ThreadChatFromChoices.FROM_AI,
+                    text=json.dumps({'actions': [{'action': 'task_failed'}]}),
+                )
+                db.add(ai_message)
+                db.commit()
+                db.refresh(ai_message)
 
         elif action_type == 'tool_use':
             tool = act['params'].get('tool')

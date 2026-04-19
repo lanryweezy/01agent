@@ -28,7 +28,7 @@ def prepare_screenshot_for_llm(screenshot_b64: str) -> Tuple[Optional[Dict], Opt
         if os.getenv('COMPUTER_USE_AGENT_MODEL_TYPE') == 'ollama' or os.getenv('COMPUTER_USE_AGENT_MODEL_TYPE') == 'gemini':
             screenshot_user_message_block = {
                 "type": "image_url",
-                "image_url": f"data:image/png;base64,{screenshot_b64}"
+                "image_url": f"data:image/jpeg;base64,{screenshot_b64}"
             }
         else:
             screenshot_user_message_block = {

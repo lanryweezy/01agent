@@ -199,6 +199,7 @@ class PlanSubtask(SQLModel, table=True):
     subtask_type: str = Field(default=SubtaskType.DESKTOP, nullable=False)
     ordering: Optional[int] = Field(nullable=False, default=0)
     status: Optional[str] = Field(nullable=False, default=SubtaskStatus.ACTIVE)
+    retry_count: int = Field(default=0)
 
     created_at: Optional[datetime.datetime] = Field(
         default_factory=utc_now,
@@ -274,3 +275,45 @@ class ThreadMessage(SQLModel, table=True):
     thread: Optional['Thread'] = Relationship(back_populates='thread_messages')
     thread_task: Optional['ThreadTask'] = Relationship(back_populates='thread_task_messages')
     plan_subtask: Optional['PlanSubtask'] = Relationship(back_populates='plan_subtask_messages')
+
+
+class Skill(SQLModel, table=True):
+    __tablename__ = 'skills'
+
+    id: Optional[int] = Field(default=None, primary_key=True, index=True, nullable=False)
+    name: str = Field(index=True, unique=True, max_length=100)
+    description: str = Field(sa_column=Column(Text))
+    instructions: str = Field(sa_column=Column(Text))
+    author_id: Optional[str] = Field(default=None, foreign_key='users.id')
+    is_public: bool = Field(default=False)
+    usage_count: int = Field(default=0)
+
+    created_at: Optional[datetime.datetime] = Field(
+        default_factory=utc_now,
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+    updated_at: Optional[datetime.datetime] = Field(
+        default_factory=utc_now,
+        sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    )
+
+    author: Optional['User'] = Relationship()
+
+
+class ScheduledAutomation(SQLModel, table=True):
+    __tablename__ = 'scheduled_automations'
+
+    id: Optional[int] = Field(default=None, primary_key=True, index=True, nullable=False)
+    user_id: str = Field(foreign_key='users.id')
+    name: str = Field(max_length=200)
+    task_text: str = Field(sa_column=Column(Text))
+    cron_expression: str = Field(max_length=100) # e.g. "0 16 * * 5"
+    last_run_at: Optional[datetime.datetime]
+    is_active: bool = Field(default=True)
+
+    created_at: Optional[datetime.datetime] = Field(
+        default_factory=utc_now,
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+
+    user: Optional['User'] = Relationship()

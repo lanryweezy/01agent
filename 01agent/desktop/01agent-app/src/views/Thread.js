@@ -9,7 +9,7 @@ import { FlexSpacer } from '../components/Elements/SmallElements';
 import NATextArea from '../components/Elements/TextAreas';
 import { IconButton } from '../components/Elements/Button';
 import { MdEdit, MdDelete } from 'react-icons/md';
-import { FaArrowAltCircleUp, FaStopCircle } from 'react-icons/fa';
+import { FaArrowAltCircleUp, FaStopCircle, FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import ClipLoader from 'react-spinners/ClipLoader';
 import { Text } from '../components/Elements/Typography';
 import ThreadDialog from '../components/DataDialogs/ThreadDialog';
@@ -88,9 +88,11 @@ export default function Thread() {
 
   const [isThreadDialogOpen, setThreadDialogOpen] = useState(false);
   const [isDeleteThreadDialogOpen, setDeleteThreadDialogOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   const accessToken = useSelector(state => state.accessToken);
   const isDarkMode = useSelector(state => state.isDarkMode);
+  const [agentStatus, setAgentStatus] = useState(null);
 
   const { tid } = useParams();
 
@@ -243,6 +245,44 @@ export default function Thread() {
     }
   };
 
+  const toggleVoice = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      dispatch(setError(true, 'Speech recognition not supported in this browser.'));
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (e) => {
+      console.error(e);
+      setIsListening(false);
+    };
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      setMessageText(transcript);
+    };
+
+    recognition.start();
+  };
+
+  const stopListening = () => {
+    setIsListening(false);
+  };
+
   const onBGModeToggleChange = async (value) => {
     if (value) {
       const ready = await window.electronAPI.isBackgroundModeReady();
@@ -296,6 +336,14 @@ export default function Thread() {
     asyncTask();
   }, []);
 
+  useEffect(() => {
+    if (window.electronAPI?.onAgentStatus) {
+      window.electronAPI.onAgentStatus((data) => {
+        setAgentStatus(data);
+      });
+    }
+  }, []);
+
   return thread !== null ? (
     <>
       <ThreadDialog
@@ -312,7 +360,8 @@ export default function Thread() {
         onYesClicked={deleteThread}
         isDarkMode={isDarkMode}
       />
-      <ThreadDiv>
+      <ThreadDiv style={{ flexDirection: 'row' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Header>
           <Text fontSize='20px' fontWeight='600' color={'var(--text-light)'}>
             {thread.title}
@@ -368,6 +417,17 @@ export default function Thread() {
                   Thinking
                 </ModeToggle>
               </ToggleContainer>
+              <div style={{width: '10px'}} />
+              <ToggleContainer isDarkMode={isDarkMode}>
+                <ModeToggle
+                  active={isListening}
+                  isDarkMode={isDarkMode}
+                  onClick={toggleVoice}
+                >
+                  {isListening ? <FaMicrophoneSlash style={{fontSize: '19px'}} /> : <FaMicrophone style={{fontSize: '19px'}} />}
+                  Voice
+                </ModeToggle>
+              </ToggleContainer>
               <FlexSpacer />
               {isSendingMessage ? (
                 <ClipLoader color={'#fff'} size={40} />
@@ -391,6 +451,39 @@ export default function Thread() {
               )}
             </div>
           </SendingContainer>
+        </div>
+        </div>
+
+        {/* System Context Sidebar */}
+        <div style={{
+          width: '240px',
+          borderLeft: '1px solid var(--border-dark)',
+          padding: '15px',
+          background: 'rgba(0,0,0,0.1)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '15px'
+        }}>
+          <div>
+            <Text fontSize='14px' fontWeight='700' color='var(--sci-fi-green)'>SYSTEM STATUS</Text>
+            {agentStatus ? (
+              <div style={{ marginTop: '10px', fontSize: '12px' }}>
+                <div style={{ marginBottom: '5px' }}>CPU: {agentStatus.cpu.toFixed(1)}%</div>
+                <div style={{ marginBottom: '5px' }}>MEM: {agentStatus.memory.toFixed(1)}%</div>
+                <div style={{ color: 'var(--sci-fi-green)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  ACTIVE: {agentStatus.active_window || 'Desktop'}
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginTop: '10px', fontSize: '12px', opacity: 0.5 }}>Connecting...</div>
+            )}
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          <div style={{ fontSize: '11px', opacity: 0.4 }}>
+            01Agent v2.0 - High Performance
+          </div>
         </div>
       </ThreadDiv>
     </>

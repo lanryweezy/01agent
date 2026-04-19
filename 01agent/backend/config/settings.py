@@ -55,23 +55,23 @@ class Settings(BaseSettings):
     
     # Ollama
     ollama_url: str = "http://127.0.0.1:11434"
-    ollama_model_name: str = "llava:7b"
+    ollama_model_name: str = "claude-3-7-sonnet-latest"
 
     # Agent-specific LLM configurations
-    planner_agent_model_type: str = "ollama"
-    planner_agent_model_id: str = "llama2"
+    planner_agent_model_type: str = "openai"
+    planner_agent_model_id: str = "gpt-4o"
 
-    suggestor_agent_model_type: str = "ollama"
-    suggestor_agent_model_id: str = "llama2"
+    suggestor_agent_model_type: str = "openai"
+    suggestor_agent_model_id: str = "gpt-4o-mini"
 
-    computer_use_agent_model_type: str = "ollama"
-    computer_use_agent_model_id: str = "llava:7b" # Multimodal model
+    computer_use_agent_model_type: str = "anthropic"
+    computer_use_agent_model_id: str = "claude-3-7-sonnet-latest" # Multimodal model
 
-    classifier_agent_model_type: str = "ollama"
-    classifier_agent_model_id: str = "llama2"
+    classifier_agent_model_type: str = "openai"
+    classifier_agent_model_id: str = "gpt-4o-mini"
 
-    title_agent_model_type: str = "ollama"
-    title_agent_model_id: str = "llama2"
+    title_agent_model_type: str = "openai"
+    title_agent_model_id: str = "gpt-4o-mini"
     
     class Config:
         env_file = ".env"

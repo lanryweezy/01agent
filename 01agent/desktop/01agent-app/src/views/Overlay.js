@@ -5,7 +5,7 @@ import _01agent_logo_ic_only from '../assets/01agent_logo_ic_only.png';
 import { AvatarButton, IconButton } from '../components/Elements/Button';
 import { useSelector } from 'react-redux';
 import axios from '../utils/axios';
-import { FaStopCircle } from 'react-icons/fa';
+import { FaStopCircle, FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import constants from '../utils/constants';
 import { MdOutlineSchedule } from 'react-icons/md';
 import { GiBrain } from 'react-icons/gi';
@@ -124,6 +124,36 @@ const ModeToggle = styled.button`
   }
 `;
 
+const ActionMarker = styled.div`
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--sci-fi-green);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  animation: ${keyframes`
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+  `} 0.8s ease-out forwards;
+`;
+
+const FeedbackText = styled.div`
+  position: absolute;
+  bottom: 80px;
+  right: 20px;
+  background: var(--surface-dark);
+  color: var(--sci-fi-green);
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--sci-fi-green);
+  font-family: monospace;
+  font-size: 14px;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+`;
+
 export default function Overlay() {
   const [expanded, setExpanded] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -133,6 +163,9 @@ export default function Overlay() {
   const [suggestions, setSuggestions] = useState([]);
   const [backgroundMode, setBackgroundMode] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(false);
+  const [activeAction, setActiveAction] = useState(null);
+  const [thinkingContent, setThinkingContent] = useState(null);
+  const [isListening, setIsListening] = useState(false);
 
   const accessToken = useSelector(state => state.accessToken);
   const isDarkMode = useSelector(state => state.isDarkMode);
@@ -238,6 +271,37 @@ export default function Overlay() {
     });
   };
 
+  const toggleVoice = () => {
+    if (isListening) {
+      setIsListening(false);
+    } else {
+      startListening();
+    }
+  };
+
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (e) => {
+      console.error(e);
+      setIsListening(false);
+    };
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      setMessageText(transcript);
+    };
+
+    recognition.start();
+  };
+
   const onBGModeToggleChange = async (value) => {
     if (value) {
       const ready = await window.electronAPI.isBackgroundModeReady();
@@ -256,6 +320,22 @@ export default function Overlay() {
         setExpanded(true);
         setRunningThreadId(threadId);
         setShowSuggestions(false);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (window.electronAPI?.onAgentAction) {
+      window.electronAPI.onAgentAction((data) => {
+        setActiveAction(data);
+        setThinkingContent(null); // Clear thinking when action starts
+        setTimeout(() => setActiveAction(null), 2000);
+      });
+    }
+
+    if (window.electronAPI?.onAgentThinking) {
+      window.electronAPI.onAgentThinking((data) => {
+        setThinkingContent(data);
       });
     }
   }, []);
@@ -290,7 +370,26 @@ export default function Overlay() {
 
   return (
     <Container>
-      <div style={{display: 'flex', alignItems: 'center', width: '100%', height: '60px'}}>
+      {activeAction && activeAction.params?.x && activeAction.params?.y && (
+        <ActionMarker
+          key={Date.now()}
+          style={{ left: activeAction.params.x, top: activeAction.params.y }}
+        />
+      )}
+
+      {activeAction && (
+        <FeedbackText>
+          ⚡ {activeAction.action.replace('_', ' ')}: {activeAction.params?.text || activeAction.params?.command || activeAction.params?.app_name || ''}
+        </FeedbackText>
+      )}
+
+      {thinkingContent && !activeAction && (
+        <FeedbackText style={{ bottom: '120px', borderColor: 'var(--accent-color)', color: 'var(--text-light)', opacity: 0.8 }}>
+          🧠 Thinking: {thinkingContent.substring(0, 100)}...
+        </FeedbackText>
+      )}
+
+      <div style={{display: 'flex', alignItems: 'center', width: '100%', height: '60px', position: 'absolute', bottom: 0, right: 0, background: expanded ? 'transparent' : 'transparent'}}>
         <AvatarButton color='transparent' onClick={() => toggleOverlay()}>
           <img
             src={isDarkMode ? _01agent_logo_ic_only_white : _01agent_logo_ic_only}
@@ -329,6 +428,16 @@ export default function Overlay() {
                     onClick={() => setThinkingMode(!thinkingMode)}
                   >
                     <GiBrain />
+                  </ModeToggle>
+                </ToggleContainer>
+                <div style={{width: '5px'}} />
+                <ToggleContainer>
+                  <ModeToggle
+                    active={isListening}
+                    isDarkMode={isDarkMode}
+                    onClick={toggleVoice}
+                  >
+                    {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
                   </ModeToggle>
                 </ToggleContainer>
               </>

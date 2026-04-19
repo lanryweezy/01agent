@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { expandMinimizeOverlay } from './windowManager.js';
-import { stopAiAgent, aiagentProcess } from './processManager.js';
+import { startAiAgent, stopAiAgent, startSuggestor, aiagentProcess } from './processManager.js';
 import { loginWithGoogle } from './auth.js';
 import { setupBackgroundMode, isBackgroundModeReady } from '../utils/wslSetup.js';
 import { spawn } from 'child_process';
@@ -12,6 +12,9 @@ function registerIpcHandlers(store, mainWindow, overlayWindow, bgSetupWindow, bg
         if (!overlayWindow) {
             createOverlayWindow();
         }
+        // Start suggestor when token is set
+        const baseURL = `http://${process.env.REACT_APP_DNS || 'localhost:8001'}`;
+        startSuggestor(baseURL, token, mainWindow);
     });
 
     ipcMain.handle('get-token', () => store.get(constants.ACCESS_TOKEN_STORE_KEY));
@@ -159,68 +162,12 @@ function registerIpcHandlers(store, mainWindow, overlayWindow, bgSetupWindow, bg
     });
 
     ipcMain.on('launch-ai-agent', async (_, baseURL, threadId, backgroundMode) => {
-        const isWindows = process.platform === 'win32';
-        const isMac = process.platform === 'darwin';
-
-        store.set(constants.LAST_BACKGROUND_MODE_VALUE, backgroundMode.toString());
-
-        if (!backgroundMode) {
-            aiagentProcess = spawn(isWindows ? path.join(__dirname, 'aiagent', 'venv', 'Scripts', 'python') : path.join(__dirname, 'aiagent', 'venv', 'bin', 'python'), [path.join(__dirname, 'aiagent', 'main.py')], {
-                env: {
-                    01AGENT_API_URL: baseURL,
-                    01AGENT_THREAD_ID: threadId,
-                    01AGENT_USER_ACCESS_TOKEN: store.get(constants.ACCESS_TOKEN_STORE_KEY),
-                    PYTHONUTF8: '1',
-                },
-            });
-
-            mainWindow?.minimize();
-        } else {
-            const envVars = {
-                SKIP_LLM_API_KEY_VERIFICATION: 'true',
-                PYTHONUTF8: '1',
-            };
-
-            const shellCommand = Object.entries(envVars)
-            .map(([k, v]) => `${k}="${v}"`).join(' ') + ' bash /agent/launch_bg_agent.sh';
-
-            aiagentProcess = spawn('wsl', ['-d', 'NeuralOS', '--', 'bash', '-c', shellCommand]);
-
-            launchBackgroundAgentWindow();
-        }
+        const accessToken = store.get(constants.ACCESS_TOKEN_STORE_KEY);
+        startAiAgent(baseURL, threadId, accessToken, mainWindow, overlayWindow);
 
         mainWindow?.webContents.send('ai-agent-launch', threadId);
         overlayWindow?.webContents.send('ai-agent-launch', threadId);
         expandMinimizeOverlay(overlayWindow, true, false);
-
-        aiagentProcess.stdout.on('data', (data) => console.log(`[Agent stdout]: ${data}`));
-        aiagentProcess.stderr.on('data', (data) => console.error(`[Agent stderr]: ${data}`));
-
-        aiagentProcess.on('error', err => {
-            console.error('❌  Agent process failed to start:', err);
-            mainWindow?.webContents.send('trigger-cancel-all-tasks');
-        });
-
-        aiagentProcess.on('exit', (code, signal) => {
-            console.log(`[Agent exited with code ${code}]`);
-            if (bgAgentWindow) {
-                bgAgentWindow.close();
-            }
-            cleanupBGAgent();
-            if (mainWindow?.isMinimized()) {
-                mainWindow.restore();
-            }
-            if (mainWindow) {
-                mainWindow.focus();
-            }
-            mainWindow?.webContents.send('ai-agent-exit');
-            overlayWindow?.webContents.send('ai-agent-exit');
-
-            if (code !== 0 || signal) {
-                mainWindow?.webContents.send('trigger-cancel-all-tasks');
-            }
-            aiagentProcess = null;
-        });
     });
 
     ipcMain.on('stop-ai-agent', stopAiAgent);
