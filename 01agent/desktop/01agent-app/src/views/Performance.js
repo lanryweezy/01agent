@@ -40,6 +40,21 @@ const Performance = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
+    if (window.electronAPI?.onAgentStatus) {
+      window.electronAPI.onAgentStatus((data) => {
+        setPerformanceData(prev => ({
+          ...prev,
+          realTime: {
+            ...prev.realTime,
+            cpu: data.cpu || prev.realTime.cpu,
+            memory: data.mem || prev.realTime.memory,
+            avgExecutionTime: data.latency || prev.realTime.avgExecutionTime,
+            status: 'working'
+          }
+        }));
+      });
+    }
+
     if (window.electronAPI?.onAgentAction) {
       window.electronAPI.onAgentAction((data) => {
         setPerformanceData(prev => ({
@@ -47,7 +62,7 @@ const Performance = () => {
           executionStream: [
             {
               time: new Date().toLocaleTimeString(),
-              action: `Execute: ${data.action}`,
+              action: `Elite Execution: ${data.action}`,
               status: 'success'
             },
             ...(prev.executionStream || []).slice(0, 19)

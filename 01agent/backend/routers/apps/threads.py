@@ -54,6 +54,8 @@ def _process_llm_response_and_create_task(response_data: dict, user_input_obj, t
             needs_memory_from_previous_tasks=response_data.get('needs_memory_from_previous_tasks', False),
             background_mode=user_input_obj.background_mode or response_data.get('is_background_mode_requested', False),
             extended_thinking_mode=user_input_obj.extended_thinking_mode or response_data.get('is_extended_thinking_mode_requested', False),
+            is_fast_track=response_data.get('is_fast_track', False),
+            skill_id=user_input_obj.skill_id if hasattr(user_input_obj, 'skill_id') else None,
         )
         db.add(thread_task)
         db.commit()

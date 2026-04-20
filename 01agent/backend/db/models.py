@@ -135,6 +135,8 @@ class ThreadTask(SQLModel, table=True):
     needs_memory_from_previous_tasks: bool = Field(default=False)
     background_mode: bool = Field(default=False)
     extended_thinking_mode: bool = Field(default=False)
+    is_fast_track: bool = Field(default=False)
+    skill_id: Optional[int] = Field(default=None, foreign_key='skills.id')
 
     created_at: Optional[datetime.datetime] = Field(
         default_factory=utc_now,

@@ -28,7 +28,8 @@ const Settings = () => {
     },
     system: {
       logLevel: 'INFO',
-      autoStart: true
+      autoStart: true,
+      localFirst: false
     }
   });
 
@@ -184,6 +185,12 @@ const Settings = () => {
                 label="Auto-start Agent"
                 value={settings.system.autoStart}
                 onChange={(v) => handleInputChange('system', 'autoStart', v)}
+                type="checkbox"
+              />
+              <SettingItem
+                label="Local-First Mode (Ollama)"
+                value={settings.system.localFirst}
+                onChange={(v) => handleInputChange('system', 'localFirst', v)}
                 type="checkbox"
               />
             </CardContent>

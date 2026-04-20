@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     computer_use_agent_model_type: str = "anthropic"
     computer_use_agent_model_id: str = "claude-3-7-sonnet-latest" # Multimodal model
 
+    computer_use_fast_agent_model_type: str = "openai"
+    computer_use_fast_agent_model_id: str = "gpt-4o-mini"
+
     classifier_agent_model_type: str = "openai"
     classifier_agent_model_id: str = "gpt-4o-mini"
 

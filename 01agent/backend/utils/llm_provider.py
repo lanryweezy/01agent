@@ -70,11 +70,12 @@ def get_llm(agent: str, temperature: float = 0.0, max_tokens: int = None, thinki
             )
     
     elif model_type == "ollama":
+        # Multimodal local support
         return ChatOllama(
             base_url=os.getenv('OLLAMA_URL', 'http://127.0.0.1:11434'),
             model=model_id,
             temperature=temperature,
-            format="json" # Local models often need explicit formatting
+            format="json" if agent != "computer_use" else None # Keep raw for vision tasks if needed
         )
     
     elif model_type == "gemini":

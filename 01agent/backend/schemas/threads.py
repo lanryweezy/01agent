@@ -41,6 +41,7 @@ class CreateThread(BaseValidationModel, TaskValidationMixin):
     task: str = Field(..., min_length=3, max_length=5000)
     background_mode: Optional[bool] = False
     extended_thinking_mode: Optional[bool] = False
+    skill_id: Optional[int] = None
 
 
 class UpdateThread(BaseValidationModel, ThreadValidationMixin):
@@ -63,3 +64,4 @@ class SendMessageObj(BaseValidationModel, TaskValidationMixin):
     text: str = Field(..., min_length=3, max_length=5000)
     background_mode: Optional[bool] = False
     extended_thinking_mode: Optional[bool] = False
+    skill_id: Optional[int] = None

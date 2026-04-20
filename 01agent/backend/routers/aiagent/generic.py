@@ -183,8 +183,21 @@ async def current_subtask_request(tid: str,
     }
 
 
+async def _async_log_step(tid, task_id, subtask_id, content, screenshot, prompt, db):
+    try:
+        data = extract_json(content)
+        msg = ThreadMessage(
+            thread_id=tid, thread_task_id=task_id, plan_subtask_id=subtask_id,
+            thread_chat_type=ThreadChatType.DESKTOP_USE, thread_chat_from=ThreadChatFromChoices.FROM_AI,
+            screenshot=screenshot, prompt=json.dumps(prompt), text=json.dumps(data)
+        )
+        db.add(msg); db.commit()
+    except Exception: pass
+
 @router.post('/{tid}/next_step')
-async def next_step(tid: str, next_step_req: NextStepRequest, db: Session = Depends(get_session),
+async def next_step(tid: str, next_step_req: NextStepRequest,
+              background_tasks: BackgroundTasks,
+              db: Session = Depends(get_session),
               user: User = Depends(get_current_user_dependency)):
     instance = db.exec(select(Thread).where(and_(
         Thread.id == tid,
@@ -215,8 +228,18 @@ async def next_step(tid: str, next_step_req: NextStepRequest, db: Session = Depe
     if not current_subtask or current_subtask.subtask_type != SubtaskType.DESKTOP:
         raise CustomError(status.HTTP_404_NOT_FOUND, 'No Current Desktop Task!')
 
+    # Check for Skill-specific instructions
+    skill_instructions = ""
+    if task.skill_id:
+        from db.models import Skill
+        skill = db.get(Skill, task.skill_id)
+        if skill:
+            skill_instructions = f"\n\nSPECIAL SKILL INSTRUCTIONS ({skill.name}):\n{skill.instructions}"
+
     if task.extended_thinking_mode is True:
         llm = llm_provider.get_llm(agent='computer_use', temperature=1.0, thinking_enabled=True)
+    elif task.is_fast_track is True:
+        llm = llm_provider.get_llm(agent='computer_use_fast', temperature=0.0)
     else:
         llm = llm_provider.get_llm(agent='computer_use', temperature=0.0)
 
@@ -286,14 +309,39 @@ async def next_step(tid: str, next_step_req: NextStepRequest, db: Session = Depe
     if screenshot_user_message_block:
         computer_use_user_message.append(screenshot_user_message_block)
 
+    system_prompt_content = ai_prompts.COMPUTER_USE_SYSTEM_PROMPT
+    if skill_instructions:
+        system_prompt_content += skill_instructions
+
     prompt = ChatPromptTemplate.from_messages([
-        SystemMessage(content=ai_prompts.COMPUTER_USE_SYSTEM_PROMPT),
+        SystemMessage(content=system_prompt_content),
         HumanMessage(content=computer_use_user_message),
     ])
 
     chain = prompt | llm
-    response = await chain.ainvoke({})
 
+    if getattr(next_step_req, 'stream', False):
+        from fastapi.responses import StreamingResponse
+
+        async def stream_generator():
+            full_content = ""
+            async for chunk in llm.astream(computer_use_user_message):
+                content = chunk.content
+                chunk_text = ""
+                if isinstance(content, list):
+                    for item in content:
+                        if item.get('type') == 'text': chunk_text += item.get('text')
+                else:
+                    chunk_text = content
+                full_content += chunk_text
+                yield chunk_text
+
+            # Async Background Logging
+            background_tasks.add_task(_async_log_step, tid, task.id, current_subtask.id, full_content, screenshot_s3_path, computer_use_text_prompt, db)
+
+        return StreamingResponse(stream_generator(), media_type='text/plain')
+
+    response = await chain.ainvoke({})
     print('Token Usage: ', response.usage_metadata)
 
     response_data = None
@@ -340,8 +388,11 @@ async def next_step(tid: str, next_step_req: NextStepRequest, db: Session = Depe
             db.commit()
             db.refresh(memory_entry)
 
-    # Iterate over all actions
+    # Process actions (parallelize tool usage)
+    import asyncio
     actions_arr = response_data.get('actions', [])
+    tool_tasks = []
+
     for act in actions_arr:
         action_type = act.get('action')
 
@@ -357,26 +408,14 @@ async def next_step(tid: str, next_step_req: NextStepRequest, db: Session = Depe
                 db.add(current_subtask)
                 db.commit()
                 db.refresh(current_subtask)
-
-                # We return the response as is, but we haven't marked the subtask as failed
-                # The next time the agent requests current_subtask, it will get the same one
-                # and can try again with the knowledge of previous failure.
             else:
-                # Mark plan, task, and thread as failed
                 current_plan.status = ThreadTaskPlanStatus.FAILED
                 db.add(current_plan)
-                db.commit()
-                db.refresh(current_plan)
-
                 task.status = ThreadTaskStatus.FAILED
                 db.add(task)
-                db.commit()
-                db.refresh(task)
-
                 instance.status = ThreadStatus.STANDBY
                 db.add(instance)
                 db.commit()
-                db.refresh(instance)
 
                 ai_message = ThreadMessage(
                     thread_id=instance.id,
@@ -387,29 +426,24 @@ async def next_step(tid: str, next_step_req: NextStepRequest, db: Session = Depe
                 )
                 db.add(ai_message)
                 db.commit()
-                db.refresh(ai_message)
 
         elif action_type == 'tool_use':
             tool = act['params'].get('tool')
             args = act['params'].get('args', {})
 
             if tool == 'save_to_memory':
-                memory_entry = ThreadTaskMemoryEntry(
-                    thread_task_id=task.id,
-                    text=args.get('text', ''),
-                )
+                memory_entry = ThreadTaskMemoryEntry(thread_task_id=task.id, text=args.get('text', ''))
                 db.add(memory_entry)
                 db.commit()
-                db.refresh(memory_entry)
-
             elif tool in ['read_pdf', 'fetch_url', 'summarize_youtube_video']:
-                tool_output_text = run_tool_server_side(tool, args)
-                memory_entry = ThreadTaskMemoryEntry(
-                    thread_task_id=task.id,
-                    text=tool_output_text,
-                )
-                db.add(memory_entry)
-                db.commit()
-                db.refresh(memory_entry)
+                # Collect tool execution tasks to run in parallel
+                tool_tasks.append(run_tool_server_side(tool, args))
+
+    if tool_tasks:
+        tool_results = await asyncio.gather(*tool_tasks)
+        for tool_output_text in tool_results:
+            memory_entry = ThreadTaskMemoryEntry(thread_task_id=task.id, text=tool_output_text)
+            db.add(memory_entry)
+        db.commit()
 
     return response_data
