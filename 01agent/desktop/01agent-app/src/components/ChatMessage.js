@@ -63,7 +63,12 @@ const Spacer = styled.div`
   height: 6px;
 `;
 
-export default function ChatMessage({ message }) {
+// ⚡ Bolt Performance Optimization
+// Wrapped ChatMessage in React.memo() to prevent unnecessary re-renders.
+// Expected Impact: Significantly reduces rendering time in large threads by
+// ensuring this component only re-renders when its specific 'message' prop changes,
+// preventing the whole list from re-rendering when parent state (like input text) changes.
+const ChatMessage = React.memo(function ChatMessage({ message }) {
   const isDarkMode = useSelector(state => state.isDarkMode);
   
   const iconStyle = { color: 'var(--sci-fi-green)', fontSize: '15px' }; // Always sci-fi green for icons
@@ -318,4 +323,6 @@ export default function ChatMessage({ message }) {
       </Bubble>
     </MessageContainer>
   );
-}
+});
+
+export default ChatMessage;
