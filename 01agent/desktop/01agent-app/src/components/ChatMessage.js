@@ -63,12 +63,9 @@ const Spacer = styled.div`
   height: 6px;
 `;
 
-// ⚡ Bolt Performance Optimization
-// Wrapped ChatMessage in React.memo() to prevent unnecessary re-renders.
-// Expected Impact: Significantly reduces rendering time in large threads by
-// ensuring this component only re-renders when its specific 'message' prop changes,
-// preventing the whole list from re-rendering when parent state (like input text) changes.
-const ChatMessage = React.memo(function ChatMessage({ message }) {
+// ⚡ Bolt: Memoize ChatMessage to prevent unnecessary re-renders of the entire message history
+// when the parent Thread's messageText state updates on every keystroke.
+const ChatMessage = React.memo(({ message }) => {
   const isDarkMode = useSelector(state => state.isDarkMode);
   
   const iconStyle = { color: 'var(--sci-fi-green)', fontSize: '15px' }; // Always sci-fi green for icons

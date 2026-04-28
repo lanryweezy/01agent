@@ -1,3 +1,3 @@
-## 2024-04-27 - [Prevent Unnecessary Re-renders in Chat List]
-**Learning:** In React, heavy components rendered in long lists (like `ChatMessage` which parses JSON strings) will severely degrade performance if they re-render on every parent state change (e.g., typing in a chat input field).
-**Action:** Always wrap list items in `React.memo()` if they depend only on specific props. Add performance metrics and explicit comments to document the expected impact of the optimization. Avoid committing unrelated configurations.
+## 2024-05-24 - React.memo for ChatMessage
+**Learning:** Found that the Thread component re-renders its entire list of messages on every keystroke because `messageText` is local state. This can be very expensive as the thread grows.
+**Action:** Always check if list item components are memoized if their parent contains frequently updating state like text inputs.
