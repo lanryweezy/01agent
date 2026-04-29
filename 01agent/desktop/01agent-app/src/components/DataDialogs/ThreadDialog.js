@@ -10,7 +10,8 @@ import NATextField from '../Elements/TextFields';
 import { getBadRequestErrorMessage } from '../../utils/helpers';
 
 
-function ThreadDialog({ isOpen, setOpen, threadObj=null, onSuccess }) {
+// ⚡ Bolt: Memoize ThreadDialog to prevent unnecessary re-renders when parent's state updates
+const ThreadDialog = React.memo(({ isOpen, setOpen, threadObj=null, onSuccess }) => {
 
   const [title, setTitle] = useState('');
 
@@ -122,6 +123,8 @@ function ThreadDialog({ isOpen, setOpen, threadObj=null, onSuccess }) {
       />
     </>
   );
-}
+});
+
+ThreadDialog.displayName = 'ThreadDialog';
 
 export default ThreadDialog;

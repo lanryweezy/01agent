@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import axios from '../utils/axios';
@@ -102,7 +102,7 @@ export default function Thread() {
 
   const dispatch = useDispatch();
 
-  const getThread = () => {
+  const getThread = useCallback(() => {
     dispatch(setLoadingDialog(true));
     axios.get(`/threads/${tid}`, {
       headers: { 'Authorization': 'Bearer ' + accessToken }
@@ -115,9 +115,9 @@ export default function Thread() {
         window.location.reload();
       }
     });
-  };
+  }, [tid, accessToken, dispatch]);
 
-  const getThreadMessages = () => {
+  const getThreadMessages = useCallback(() => {
     dispatch(setLoadingDialog(true));
     axios.get(`/threads/${tid}/thread_messages`, {
       headers: { 'Authorization': 'Bearer ' + accessToken }
@@ -130,7 +130,7 @@ export default function Thread() {
         window.location.reload();
       }
     });
-  };
+  }, [tid, accessToken, dispatch]);
 
   const sendMessage = () => {
     if (messageText.length === 0 || isSendingMessage || thread.status === 'working') {
@@ -186,7 +186,7 @@ export default function Thread() {
     });
   };
 
-  const deleteThread = () => {
+  const deleteThread = useCallback(() => {
     dispatch(setLoadingDialog(true));
     axios.delete('/threads/' + tid, {
       headers: {
@@ -207,7 +207,7 @@ export default function Thread() {
         }, 3000);
       }
     });
-  }
+  }, [dispatch, tid, accessToken, navigate]);
 
   const cancelRunningTask = () => {
     if (thread.status !== 'working') {
@@ -297,7 +297,7 @@ export default function Thread() {
   useEffect(() => {
     getThread();
     getThreadMessages();
-  }, [tid]);
+  }, [tid, getThread, getThreadMessages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -318,7 +318,7 @@ export default function Thread() {
         getThreadMessages();
       });
     }
-  }, []);
+  }, [getThread, getThreadMessages]);
 
   useEffect(() => {
     const asyncTask = async () => {
@@ -344,13 +344,16 @@ export default function Thread() {
     }
   }, []);
 
+  const memoizedThreadObj = useMemo(() => thread !== null ? Object.assign({}, thread) : null, [thread]);
+  const handleDialogSuccess = useCallback(() => window.location.reload(), []);
+
   return thread !== null ? (
     <>
       <ThreadDialog
         isOpen={isThreadDialogOpen}
         setOpen={setThreadDialogOpen}
-        threadObj={Object.assign({}, thread)}
-        onSuccess={() => window.location.reload()}
+        threadObj={memoizedThreadObj}
+        onSuccess={handleDialogSuccess}
       />
       <YesNoDialog
         isOpen={isDeleteThreadDialogOpen}
