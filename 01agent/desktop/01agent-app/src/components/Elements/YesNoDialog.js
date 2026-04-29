@@ -4,7 +4,8 @@ import { Text } from './Typography';
 import { Button } from './Button';
 import { useSelector } from 'react-redux';
 
-function YesNoDialog({ isOpen, setOpen, title, text, isDarkMode=false, onYesClicked }) {
+// ⚡ Bolt: Memoize YesNoDialog to prevent unnecessary re-renders when parent's state updates
+const YesNoDialog = React.memo(({ isOpen, setOpen, title, text, isDarkMode=false, onYesClicked }) => {
 
   const isRTL = useSelector(state => state.isRTL);
 
@@ -42,6 +43,8 @@ function YesNoDialog({ isOpen, setOpen, title, text, isDarkMode=false, onYesClic
       />
     </>
   );
-}
+});
+
+YesNoDialog.displayName = 'YesNoDialog';
 
 export default YesNoDialog;
