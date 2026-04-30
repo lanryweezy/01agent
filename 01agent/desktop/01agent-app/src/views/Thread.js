@@ -347,6 +347,13 @@ export default function Thread() {
   const memoizedThreadObj = useMemo(() => thread !== null ? Object.assign({}, thread) : null, [thread]);
   const handleDialogSuccess = useCallback(() => window.location.reload(), []);
 
+  // ⚡ Bolt: Memoize the chat message list to prevent O(N) VDOM node recreation on every keystroke
+  const memoizedMessageList = useMemo(() => (
+    messages.map((msg) => (
+      <ChatMessage key={'thread_message__' + msg.id} message={msg} />
+    ))
+  ), [messages]);
+
   return thread !== null ? (
     <>
       <ThreadDialog
@@ -382,9 +389,7 @@ export default function Thread() {
           </div>
         </Header>
         <ChatContainer>
-          {messages.map((msg) => (
-            <ChatMessage key={'thread_message__' + msg.id} message={msg} />
-          ))}
+          {memoizedMessageList}
           <div ref={bottomRef} />
         </ChatContainer>
         <div style={{ padding: '15px' }}>

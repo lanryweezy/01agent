@@ -1,3 +1,3 @@
-## 2024-05-24 - React.memo for ChatMessage
-**Learning:** Found that the Thread component re-renders its entire list of messages on every keystroke because `messageText` is local state. This can be very expensive as the thread grows.
-**Action:** Always check if list item components are memoized if their parent contains frequently updating state like text inputs.
+## 2024-05-24 - React Re-renders
+**Learning:** In `Thread.js`, `messages.map` is executed on every keystroke because `messageText` is part of `Thread` state. While `ChatMessage` handles memoization, recreating the VDOM nodes for potentially hundreds of messages on every keystroke is expensive (O(N) VDOM allocation). We can memoize the `ChatContainer` contents or the whole message list using `useMemo` so that the message list VDOM is only re-evaluated when `messages` actually changes, not on every keystroke.
+**Action:** Let's optimize `Thread.js` by wrapping the `messages.map` in a `useMemo` block that only depends on `messages`. This is a classic and very measurable performance improvement.
