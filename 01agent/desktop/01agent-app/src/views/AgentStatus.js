@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import {
   SidePanelContent,
@@ -192,18 +192,55 @@ const AgentStatus = () => {
     }
   };
 
-  const getLogLevelColor = (level) => {
-    switch (level) {
-      case 'error': return '#ef4444';
-      case 'warning': return '#f59e0b';
-      case 'info': return '#3b82f6';
-      default: return isDarkMode ? '#e1e4e8' : '#586069';
-    }
-  };
 
-  const filteredLogs = agentStatus.logs.filter(log => 
-    selectedLogLevel === 'all' || log.level === selectedLogLevel
-  );
+
+  // ⚡ Bolt: Memoize the log list to prevent O(N) VDOM node recreation on every frequent state change (like system health metrics)
+  const memoizedLogElements = useMemo(() => {
+    const getLogLevelColor = (level) => {
+      switch (level) {
+        case 'error': return '#ef4444';
+        case 'warning': return '#f59e0b';
+        case 'info': return '#3b82f6';
+        default: return isDarkMode ? '#e1e4e8' : '#586069';
+      }
+    };
+
+    const filteredLogs = agentStatus.logs.filter(log =>
+      selectedLogLevel === 'all' || log.level === selectedLogLevel
+    );
+
+    if (filteredLogs.length === 0) {
+      return (
+        <div style={{
+          color: isDarkMode ? '#9ca3af' : '#6b7280',
+          textAlign: 'center',
+          padding: '20px'
+        }}>
+          No logs available
+        </div>
+      );
+    }
+
+    return filteredLogs.map(log => (
+      <div key={log.id} style={{ marginBottom: '4px' }}>
+        <span style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+          [{log.timestamp.toLocaleTimeString()}]
+        </span>
+        {' '}
+        <span style={{
+          color: getLogLevelColor(log.level),
+          fontWeight: '600',
+          textTransform: 'uppercase'
+        }}>
+          {log.level}:
+        </span>
+        {' '}
+        <span style={{ color: isDarkMode ? '#e1e4e8' : '#24292e' }}>
+          {log.message}
+        </span>
+      </div>
+    ));
+  }, [isDarkMode, agentStatus.logs, selectedLogLevel]);
 
   return (
     <SidePanelContent>
@@ -430,35 +467,7 @@ const AgentStatus = () => {
                 fontFamily: 'Monaco, Consolas, "Courier New", monospace',
                 fontSize: '12px'
               }}>
-                {filteredLogs.length === 0 ? (
-                  <div style={{ 
-                    color: isDarkMode ? '#9ca3af' : '#6b7280',
-                    textAlign: 'center',
-                    padding: '20px'
-                  }}>
-                    No logs available
-                  </div>
-                ) : (
-                  filteredLogs.map(log => (
-                    <div key={log.id} style={{ marginBottom: '4px' }}>
-                      <span style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
-                        [{log.timestamp.toLocaleTimeString()}]
-                      </span>
-                      {' '}
-                      <span style={{ 
-                        color: getLogLevelColor(log.level),
-                        fontWeight: '600',
-                        textTransform: 'uppercase'
-                      }}>
-                        {log.level}:
-                      </span>
-                      {' '}
-                      <span style={{ color: isDarkMode ? '#e1e4e8' : '#24292e' }}>
-                        {log.message}
-                      </span>
-                    </div>
-                  ))
-                )}
+                {memoizedLogElements}
               </div>
             </CardContent>
           </Card>
