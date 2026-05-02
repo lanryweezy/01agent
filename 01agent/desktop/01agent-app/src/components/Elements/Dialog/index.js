@@ -15,7 +15,8 @@ import { IoMdClose } from 'react-icons/io';
 import { Divider } from '../SmallElements';
 import { useSelector } from 'react-redux';
 
-const Dialog = ({ child, maxWidth, isOpen, setOpen, persistant, title=null, flex=true, padding, scrollable=false, actions=null, isDarkMode=false }) => {
+// ⚡ Bolt: Memoize Dialog to prevent unnecessary re-renders when parent's state updates
+const Dialog = React.memo(({ child, maxWidth, isOpen, setOpen, persistant, title=null, flex=true, padding, scrollable=false, actions=null, isDarkMode=false }) => {
 
   const onOverlayClick = () => {
     if (persistant !== true) {
@@ -62,6 +63,8 @@ const Dialog = ({ child, maxWidth, isOpen, setOpen, persistant, title=null, flex
       }
     </>
   )
-};
+});
+
+Dialog.displayName = 'Dialog';
 
 export default Dialog;
