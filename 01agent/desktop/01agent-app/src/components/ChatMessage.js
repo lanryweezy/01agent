@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import { useSelector } from 'react-redux';
 import { Tag } from './Elements/Tag';
@@ -13,7 +13,7 @@ import {
 import {
   MdOutlineOpenInBrowser,
   MdDragIndicator,
-  MdCancel,
+
   MdError,
   MdApps,
   MdScreenShare
@@ -96,16 +96,23 @@ const ChatMessage = React.memo(({ message }) => {
   const isUser = message.thread_chat_from !== 'from_ai';
   const role = isUser ? 'user' : 'assistant';
 
+  const parsedMessage = useMemo(() => {
+    if (message.thread_chat_type === 'normal_message') return null;
+    try {
+      return JSON.parse(message.text);
+    } catch {
+      return null;
+    }
+  }, [message.text, message.thread_chat_type]);
+
   const getContent = () => {
     const type = message.thread_chat_type;
     const raw = message.text;
 
     if (type === 'normal_message') return <>{raw}</>;
 
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
+    let parsed = parsedMessage;
+    if (!parsed) {
       return '[Failed to parse message]';
     }
 
@@ -320,6 +327,13 @@ const ChatMessage = React.memo(({ message }) => {
       </Bubble>
     </MessageContainer>
   );
+}, (prevProps, nextProps) => {
+  return prevProps.message.id === nextProps.message.id &&
+         prevProps.message.text === nextProps.message.text &&
+         prevProps.message.thread_chat_type === nextProps.message.thread_chat_type &&
+         prevProps.message.thread_chat_from === nextProps.message.thread_chat_from &&
+         prevProps.message.chain_of_thought === nextProps.message.chain_of_thought;
 });
 
 export default ChatMessage;
+ChatMessage.displayName = 'ChatMessage';
