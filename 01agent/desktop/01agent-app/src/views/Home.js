@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from '../utils/axios';
 import { setLoadingDialog, setError } from '../store';
@@ -417,26 +417,55 @@ export default function Home() {
     }
   }, []);
 
-  const quickActions = [
-    {
-      icon: <FaBolt />,
-      title: "Quick Task",
-      description: "Fast automation",
-      action: () => setMessageText("Organize my desktop files")
-    },
-    {
-      icon: <MdLightbulb />,
-      title: "Smart Suggestion",
-      description: "AI-powered ideas",
-      action: () => setMessageText("Suggest productivity improvements for my workflow")
-    },
-    {
-      icon: <MdRocket />,
-      title: "Power User",
-      description: "Advanced automation",
-      action: () => setMessageText("Create a comprehensive system backup and optimization routine")
-    }
-  ];
+  // ⚡ Bolt: Memoize suggestions list mapping to prevent O(N) VDOM node recreation on every keystroke
+  const memoizedSuggestions = useMemo(() => {
+    return suggestions.map((s, i) => (
+      <SuggestionChip
+        key={i}
+        isDarkMode={isDarkMode}
+        onClick={() => setMessageText(s.ai_prompt || s.prompt)}
+      >
+        <MdLightbulb color={theme.colors.primary} />
+        {s.title}
+      </SuggestionChip>
+    ));
+  }, [isDarkMode, suggestions]);
+
+  // ⚡ Bolt: Memoize quick actions list mapping
+  const memoizedQuickActions = useMemo(() => {
+    const quickActions = [
+      {
+        icon: <FaBolt />,
+        title: "Quick Task",
+        description: "Fast automation",
+        action: () => setMessageText("Organize my desktop files")
+      },
+      {
+        icon: <MdLightbulb />,
+        title: "Smart Suggestion",
+        description: "AI-powered ideas",
+        action: () => setMessageText("Suggest productivity improvements for my workflow")
+      },
+      {
+        icon: <MdRocket />,
+        title: "Power User",
+        description: "Advanced automation",
+        action: () => setMessageText("Create a comprehensive system backup and optimization routine")
+      }
+    ];
+
+    return quickActions.map((action, index) => (
+      <QuickActionCard
+        key={index}
+        isDarkMode={isDarkMode}
+        onClick={action.action}
+      >
+        <div className="icon">{action.icon}</div>
+        <div className="title">{action.title}</div>
+        <div className="description">{action.description}</div>
+      </QuickActionCard>
+    ));
+  }, [isDarkMode]);
 
   return (
     <HomeContainer isDarkMode={isDarkMode}>
@@ -464,16 +493,7 @@ export default function Home() {
 
         {suggestions.length > 0 && (
           <SuggestionsWrapper>
-            {suggestions.map((s, i) => (
-              <SuggestionChip
-                key={i}
-                isDarkMode={isDarkMode}
-                onClick={() => setMessageText(s.ai_prompt || s.prompt)}
-              >
-                <MdLightbulb color={theme.colors.primary} />
-                {s.title}
-              </SuggestionChip>
-            ))}
+            {memoizedSuggestions}
           </SuggestionsWrapper>
         )}
         
@@ -515,17 +535,7 @@ export default function Home() {
       </TaskCard>
 
       <QuickActions>
-        {quickActions.map((action, index) => (
-          <QuickActionCard
-            key={index}
-            isDarkMode={isDarkMode}
-            onClick={action.action}
-          >
-            <div className="icon">{action.icon}</div>
-            <div className="title">{action.title}</div>
-            <div className="description">{action.description}</div>
-          </QuickActionCard>
-        ))}
+        {memoizedQuickActions}
       </QuickActions>
 
       <StatsRow>
