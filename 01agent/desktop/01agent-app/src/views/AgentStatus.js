@@ -242,6 +242,60 @@ const AgentStatus = () => {
     ));
   }, [isDarkMode, agentStatus.logs, selectedLogLevel]);
 
+  // ⚡ Bolt: Memoize system health mapping to prevent O(N) VDOM node recreation on frequent telemetry updates
+  const memoizedSystemHealth = useMemo(() => (
+    Object.entries(agentStatus.systemHealth).map(([metric, value]) => (
+      <div key={metric}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '4px'
+        }}>
+          <span style={{
+            fontSize: '12px',
+            color: isDarkMode ? '#9ca3af' : '#6b7280',
+            textTransform: 'capitalize'
+          }}>
+            {metric}
+          </span>
+          <span style={{ fontSize: '12px', fontWeight: '600' }}>
+            {value.toFixed(1)}%
+          </span>
+        </div>
+        <ProgressBar isDarkMode={isDarkMode} value={value}>
+          <div className="fill"></div>
+        </ProgressBar>
+      </div>
+    ))
+  ), [isDarkMode, agentStatus.systemHealth]);
+
+  // ⚡ Bolt: Memoize components mapping to prevent O(N) VDOM node recreation on frequent telemetry updates
+  const memoizedComponents = useMemo(() => (
+    Object.entries(agentStatus.components).map(([component, status]) => (
+      <div key={component} style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '8px 12px',
+        border: `1px solid ${isDarkMode ? '#404040' : '#e1e4e8'}`,
+        borderRadius: '4px',
+        background: isDarkMode ? '#2a2a2a' : '#f8f9fa'
+      }}>
+        <span style={{
+          fontSize: '13px',
+          fontWeight: '500',
+          textTransform: 'capitalize'
+        }}>
+          {component.replace(/([A-Z])/g, ' $1').trim()}
+        </span>
+        <Badge variant={getComponentStatusColor(status)} isDarkMode={isDarkMode}>
+          {status}
+        </Badge>
+      </div>
+    ))
+  ), [isDarkMode, agentStatus.components]);
+
   return (
     <SidePanelContent>
       <SidePanelHeader isDarkMode={isDarkMode}>
@@ -355,30 +409,7 @@ const AgentStatus = () => {
             <CardContent isDarkMode={isDarkMode}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                 
-                {Object.entries(agentStatus.systemHealth).map(([metric, value]) => (
-                  <div key={metric}>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      marginBottom: '4px'
-                    }}>
-                      <span style={{ 
-                        fontSize: '12px', 
-                        color: isDarkMode ? '#9ca3af' : '#6b7280',
-                        textTransform: 'capitalize'
-                      }}>
-                        {metric}
-                      </span>
-                      <span style={{ fontSize: '12px', fontWeight: '600' }}>
-                        {value.toFixed(1)}%
-                      </span>
-                    </div>
-                    <ProgressBar isDarkMode={isDarkMode} value={value}>
-                      <div className="fill"></div>
-                    </ProgressBar>
-                  </div>
-                ))}
+                {memoizedSystemHealth}
               </div>
             </CardContent>
           </Card>
@@ -390,28 +421,7 @@ const AgentStatus = () => {
             </CardHeader>
             <CardContent isDarkMode={isDarkMode}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
-                {Object.entries(agentStatus.components).map(([component, status]) => (
-                  <div key={component} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '8px 12px',
-                    border: `1px solid ${isDarkMode ? '#404040' : '#e1e4e8'}`,
-                    borderRadius: '4px',
-                    background: isDarkMode ? '#2a2a2a' : '#f8f9fa'
-                  }}>
-                    <span style={{ 
-                      fontSize: '13px', 
-                      fontWeight: '500',
-                      textTransform: 'capitalize'
-                    }}>
-                      {component.replace(/([A-Z])/g, ' $1').trim()}
-                    </span>
-                    <Badge variant={getComponentStatusColor(status)} isDarkMode={isDarkMode}>
-                      {status}
-                    </Badge>
-                  </div>
-                ))}
+                {memoizedComponents}
               </div>
             </CardContent>
           </Card>
