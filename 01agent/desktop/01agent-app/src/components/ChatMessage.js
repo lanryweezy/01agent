@@ -65,34 +65,34 @@ const Spacer = styled.div`
 
 // ⚡ Bolt: Memoize ChatMessage to prevent unnecessary re-renders of the entire message history
 // when the parent Thread's messageText state updates on every keystroke.
+const iconStyle = { color: 'var(--sci-fi-green)', fontSize: '15px' }; // Always sci-fi green for icons
+
+const actionMap = {
+  mouse_move: { label: 'Move Cursor', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
+  left_click: { label: 'Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
+  right_click: { label: 'Right Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
+  double_click: { label: 'Double Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
+  triple_click: { label: 'Triple Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
+  left_click_drag: { label: 'Click & Drag', color: 'var(--sci-fi-green)', icon: <MdDragIndicator style={iconStyle} /> },
+  left_mouse_down: { label: 'Mouse Down', color: 'var(--sci-fi-green)', icon: <MdDragIndicator style={iconStyle} /> },
+  left_mouse_up: { label: 'Mouse Up', color: 'var(--sci-fi-green)', icon: <MdDragIndicator style={iconStyle} /> },
+  scroll: { label: 'Scroll', color: 'var(--sci-fi-green)', icon: <FaScroll style={iconStyle} /> },
+  type: { label: 'Type Text', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
+  key: { label: 'Press Key', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
+  hold_key: { label: 'Hold Key', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
+  key_combo: { label: 'Key Combo', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
+  wait: { label: 'Wait', color: 'var(--sci-fi-green)', icon: <FaPause style={iconStyle} /> },
+  launch_browser: { label: 'Launch Browser', color: 'var(--sci-fi-green)', icon: <MdOutlineOpenInBrowser style={iconStyle} /> },
+  launch_app: { label: 'Launch App', color: 'var(--sci-fi-green)', icon: <MdApps style={iconStyle} /> },
+  focus_app: { label: 'Switch To App', color: 'var(--sci-fi-green)', icon: <MdApps style={iconStyle} /> },
+  request_screenshot: { label: 'Request Screenshot', color: 'var(--sci-fi-green)', icon: <MdScreenShare style={iconStyle} /> },
+  tool_use: { label: 'Tool Use', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
+  subtask_completed: { label: 'Step Completed', color: 'var(--sci-fi-green)', icon: <FaCheckCircle style={iconStyle} /> },
+  subtask_failed: { label: 'Step Failed', color: 'var(--danger-color)', icon: <MdError style={iconStyle} /> }
+};
+
 const ChatMessage = React.memo(({ message }) => {
   const isDarkMode = useSelector(state => state.isDarkMode);
-  
-  const iconStyle = { color: 'var(--sci-fi-green)', fontSize: '15px' }; // Always sci-fi green for icons
-
-  const actionMap = {
-    mouse_move: { label: 'Move Cursor', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
-    left_click: { label: 'Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
-    right_click: { label: 'Right Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
-    double_click: { label: 'Double Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
-    triple_click: { label: 'Triple Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
-    left_click_drag: { label: 'Click & Drag', color: 'var(--sci-fi-green)', icon: <MdDragIndicator style={iconStyle} /> },
-    left_mouse_down: { label: 'Mouse Down', color: 'var(--sci-fi-green)', icon: <MdDragIndicator style={iconStyle} /> },
-    left_mouse_up: { label: 'Mouse Up', color: 'var(--sci-fi-green)', icon: <MdDragIndicator style={iconStyle} /> },
-    scroll: { label: 'Scroll', color: 'var(--sci-fi-green)', icon: <FaScroll style={iconStyle} /> },
-    type: { label: 'Type Text', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
-    key: { label: 'Press Key', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
-    hold_key: { label: 'Hold Key', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
-    key_combo: { label: 'Key Combo', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
-    wait: { label: 'Wait', color: 'var(--sci-fi-green)', icon: <FaPause style={iconStyle} /> },
-    launch_browser: { label: 'Launch Browser', color: 'var(--sci-fi-green)', icon: <MdOutlineOpenInBrowser style={iconStyle} /> },
-    launch_app: { label: 'Launch App', color: 'var(--sci-fi-green)', icon: <MdApps style={iconStyle} /> },
-    focus_app: { label: 'Switch To App', color: 'var(--sci-fi-green)', icon: <MdApps style={iconStyle} /> },
-    request_screenshot: { label: 'Request Screenshot', color: 'var(--sci-fi-green)', icon: <MdScreenShare style={iconStyle} /> },
-    tool_use: { label: 'Tool Use', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
-    subtask_completed: { label: 'Step Completed', color: 'var(--sci-fi-green)', icon: <FaCheckCircle style={iconStyle} /> },
-    subtask_failed: { label: 'Step Failed', color: 'var(--danger-color)', icon: <MdError style={iconStyle} /> }
-  };
   const isUser = message.thread_chat_from !== 'from_ai';
   const role = isUser ? 'user' : 'assistant';
 
@@ -105,7 +105,8 @@ const ChatMessage = React.memo(({ message }) => {
     }
   }, [message.text, message.thread_chat_type]);
 
-  const getContent = () => {
+  // ⚡ Bolt: Memoize content rendering to avoid expensive JSON.stringify inside mappings on every render
+  const memoizedContent = useMemo(() => {
     const type = message.thread_chat_type;
     const raw = message.text;
 
@@ -318,12 +319,12 @@ const ChatMessage = React.memo(({ message }) => {
     }
 
     return '[Unknown message type]';
-  };
+  }, [message.thread_chat_type, message.text, parsedMessage, message.chain_of_thought]);
 
   return (
     <MessageContainer role={role}>
       <Bubble role={role} isDarkMode={isDarkMode}>
-        {getContent()}
+        {memoizedContent}
       </Bubble>
     </MessageContainer>
   );
