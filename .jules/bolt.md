@@ -4,3 +4,6 @@
 ## 2024-05-24 - Optimizing high frequency mappings
 **Learning:** `AgentStatus` receives high-frequency updates to the `agentStatus` prop because it logs fast telemetry changes. Un-memoized mappings like `Object.entries(agentStatus.systemHealth).map` inside the component body create new VDOM elements on every tick.
 **Action:** Used `useMemo` on these mapping operations to ensure VDOM elements are cached across telemetry pings. Be careful to ensure correct imports of `useMemo`.
+## 2024-05-24 - React JSON.stringify inside renders
+**Learning:** Calling `JSON.stringify` inside the render function or a `.map` loop mapping data directly to elements (e.g. `{typeof value === 'object' ? JSON.stringify(value) : value}`) forces synchronous serialization on every single component re-render. This causes performance issues, especially when rendering lists or objects with frequent parent state updates.
+**Action:** When such synchronous computations are required, wrap the heavy render computations or `.map` mappings inside a `useMemo` block with appropriate dependencies so that `JSON.stringify` only fires when the actual data payload changes, rather than on every keystroke or telemetry ping.
