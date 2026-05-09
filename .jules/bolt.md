@@ -4,3 +4,6 @@
 ## 2024-05-24 - Optimizing high frequency mappings
 **Learning:** `AgentStatus` receives high-frequency updates to the `agentStatus` prop because it logs fast telemetry changes. Un-memoized mappings like `Object.entries(agentStatus.systemHealth).map` inside the component body create new VDOM elements on every tick.
 **Action:** Used `useMemo` on these mapping operations to ensure VDOM elements are cached across telemetry pings. Be careful to ensure correct imports of `useMemo`.
+## 2024-05-24 - JSON.stringify in render loops
+**Learning:** Calling `JSON.stringify` inside the render function of a React component (like `ChatMessage.js`) forces synchronous serialization on every render. Even if the component itself is memoized using `React.memo`, any re-render triggered by prop updates (like streaming `chain_of_thought` text) will cause the entire payload to be re-stringified repeatedly, which is a major performance bottleneck for large objects.
+**Action:** Wrapped the entire content generation logic in `ChatMessage.js` in a `useMemo` block (`renderedContent`). This ensures that complex parsing and `JSON.stringify` logic is only executed when the message's text or core type changes, caching the generated VDOM during high-frequency parent state updates.

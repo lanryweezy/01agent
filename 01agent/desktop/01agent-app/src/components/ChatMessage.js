@@ -105,7 +105,9 @@ const ChatMessage = React.memo(({ message }) => {
     }
   }, [message.text, message.thread_chat_type]);
 
-  const getContent = () => {
+  // ⚡ Bolt: Memoize the rendered content to prevent running expensive JSON.stringify inside map loops
+  // during every re-render of ChatMessage (e.g. when chain_of_thought streams in)
+  const renderedContent = useMemo(() => {
     const type = message.thread_chat_type;
     const raw = message.text;
 
@@ -318,12 +320,12 @@ const ChatMessage = React.memo(({ message }) => {
     }
 
     return '[Unknown message type]';
-  };
+  }, [message.thread_chat_type, message.text, parsedMessage, message.chain_of_thought, actionMap]);
 
   return (
     <MessageContainer role={role}>
       <Bubble role={role} isDarkMode={isDarkMode}>
-        {getContent()}
+        {renderedContent}
       </Bubble>
     </MessageContainer>
   );
