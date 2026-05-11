@@ -12,52 +12,8 @@ import {
   Badge
 } from '../layouts/ModernContainers';
 
-const Settings = () => {
-  const isDarkMode = useSelector(state => state.isDarkMode);
-  
-  const [settings, setSettings] = useState({
-    execution: {
-      strategy: 'vision_centric',
-      timeout: 30,
-      retryAttempts: 3
-    },
-    ui: {
-      screenshotQuality: 75,
-      typeInterval: 0.01,
-      clickDelay: 0.05
-    },
-    system: {
-      logLevel: 'INFO',
-      autoStart: true
-    }
-  });
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastSaved, setLastSaved] = useState(null);
-
-  const saveSettings = async () => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setLastSaved(new Date());
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInputChange = (category, key, value) => {
-    setSettings(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [key]: value
-      }
-    }));
-  };
-
-  const SettingItem = ({ label, value, onChange, type = 'text', min, max, step, options }) => (
+// ⚡ Bolt: Extracted SettingItem out of Settings component body to prevent unmounting and remounting on every render.
+const SettingItem = ({ label, value, onChange, type = 'text', min, max, step, options, isDarkMode }) => (
     <div style={{ 
       display: 'flex', 
       justifyContent: 'space-between', 
@@ -120,6 +76,52 @@ const Settings = () => {
     </div>
   );
 
+const Settings = () => {
+  const isDarkMode = useSelector(state => state.isDarkMode);
+
+  const [settings, setSettings] = useState({
+    execution: {
+      strategy: 'vision_centric',
+      timeout: 30,
+      retryAttempts: 3
+    },
+    ui: {
+      screenshotQuality: 75,
+      typeInterval: 0.01,
+      clickDelay: 0.05
+    },
+    system: {
+      logLevel: 'INFO',
+      autoStart: true
+    }
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+
+  const saveSettings = async () => {
+    setIsLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (category, key, value) => {
+    setSettings(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [key]: value
+      }
+    }));
+  };
+
+
   return (
     <SidePanelContent>
       <SidePanelHeader isDarkMode={isDarkMode}>
@@ -141,7 +143,7 @@ const Settings = () => {
               <h3>Vision & Execution</h3>
             </CardHeader>
             <CardContent isDarkMode={isDarkMode}>
-              <SettingItem
+              <SettingItem isDarkMode={isDarkMode}
                 label="Screenshot Quality (%)"
                 value={settings.ui.screenshotQuality}
                 onChange={(v) => handleInputChange('ui', 'screenshotQuality', v)}
@@ -149,13 +151,13 @@ const Settings = () => {
                 min={50}
                 max={100}
               />
-              <SettingItem
+              <SettingItem isDarkMode={isDarkMode}
                 label="Action Timeout (s)"
                 value={settings.execution.timeout}
                 onChange={(v) => handleInputChange('execution', 'timeout', v)}
                 type="number"
               />
-              <SettingItem
+              <SettingItem isDarkMode={isDarkMode}
                 label="Retry Attempts"
                 value={settings.execution.retryAttempts}
                 onChange={(v) => handleInputChange('execution', 'retryAttempts', v)}
@@ -169,7 +171,7 @@ const Settings = () => {
               <h3>System</h3>
             </CardHeader>
             <CardContent isDarkMode={isDarkMode}>
-              <SettingItem
+              <SettingItem isDarkMode={isDarkMode}
                 label="Log Level"
                 value={settings.system.logLevel}
                 onChange={(v) => handleInputChange('system', 'logLevel', v)}
@@ -180,7 +182,7 @@ const Settings = () => {
                   { value: 'ERROR', label: 'Error' }
                 ]}
               />
-              <SettingItem
+              <SettingItem isDarkMode={isDarkMode}
                 label="Auto-start Agent"
                 value={settings.system.autoStart}
                 onChange={(v) => handleInputChange('system', 'autoStart', v)}
