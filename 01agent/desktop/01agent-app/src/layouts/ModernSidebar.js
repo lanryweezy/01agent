@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -82,17 +82,29 @@ const ModernSidebar = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const navigationItems = [
-    { path: '/', label: 'Home', icon: Icons.home },
-    { path: '/threads', label: 'Threads', icon: Icons.threads },
-    { path: '/performance', label: 'Performance', icon: Icons.performance },
-    { path: '/status', label: 'Agent Status', icon: Icons.status },
-    { path: '/settings', label: 'Settings', icon: Icons.settings }
-  ];
+  // ⚡ Bolt: Memoize the navigation mapping to prevent O(N) VDOM node recreation during telemetry ticks
+  const memoizedNavigationItems = useMemo(() => {
+    const navigationItems = [
+      { path: '/', label: 'Home', icon: Icons.home },
+      { path: '/threads', label: 'Threads', icon: Icons.threads },
+      { path: '/performance', label: 'Performance', icon: Icons.performance },
+      { path: '/status', label: 'Agent Status', icon: Icons.status },
+      { path: '/settings', label: 'Settings', icon: Icons.settings }
+    ];
 
-  const handleNavigation = (path) => {
-    navigate(path);
-  };
+    return navigationItems.map((item) => (
+      <NavigationItem
+        key={item.path}
+        className={location.pathname === item.path ? 'active' : ''}
+        onClick={() => navigate(item.path)}
+        isDarkMode={isDarkMode}
+      >
+        <span className="icon">{item.icon}</span>
+        {item.label}
+        <StatusIndicator status={agentStatus} />
+      </NavigationItem>
+    ));
+  }, [location.pathname, isDarkMode, agentStatus, navigate]);
 
   const toggleDarkMode = async () => {
     const newDarkMode = !isDarkMode;
@@ -156,18 +168,7 @@ const ModernSidebar = () => {
 
       <SidePanelBody>
         <NavigationList>
-          {navigationItems.map((item) => (
-            <NavigationItem
-              key={item.path}
-              className={location.pathname === item.path ? 'active' : ''}
-              onClick={() => handleNavigation(item.path)}
-              isDarkMode={isDarkMode}
-            >
-              <span className="icon">{item.icon}</span>
-              {item.label}
-              <StatusIndicator status={agentStatus} />
-            </NavigationItem>
-          ))}
+          {memoizedNavigationItems}
         </NavigationList>
 
         <PerformanceBar isDarkMode={isDarkMode}>
