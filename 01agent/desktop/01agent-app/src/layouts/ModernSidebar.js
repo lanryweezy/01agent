@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -16,7 +16,7 @@ import {
   Badge
 } from './ModernContainers';
 import { setDarkMode } from '../store';
-import theme from '../theme/GlobalTheme';
+// import theme from '../theme/GlobalTheme';
 
 // Enhanced Icons with better visual hierarchy
 const Icons = {
@@ -71,7 +71,7 @@ const ModernSidebar = () => {
 
     // Simulate performance data updates
     const interval = setInterval(() => {
-      setPerformanceData(prev => ({
+      setPerformanceData(() => ({
         cpu: Math.random() * 100,
         memory: Math.random() * 100,
         tasks: Math.floor(Math.random() * 50),
@@ -82,17 +82,17 @@ const ModernSidebar = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const navigationItems = [
+  const navigationItems = React.useMemo(() => [
     { path: '/', label: 'Home', icon: Icons.home },
     { path: '/threads', label: 'Threads', icon: Icons.threads },
     { path: '/performance', label: 'Performance', icon: Icons.performance },
     { path: '/status', label: 'Agent Status', icon: Icons.status },
     { path: '/settings', label: 'Settings', icon: Icons.settings }
-  ];
+  ], []);
 
-  const handleNavigation = (path) => {
+  const handleNavigation = React.useCallback((path) => {
     navigate(path);
-  };
+  }, [navigate]);
 
   const toggleDarkMode = async () => {
     const newDarkMode = !isDarkMode;
@@ -127,6 +127,22 @@ const ModernSidebar = () => {
     }));
   };
 
+  // ⚡ Bolt: Memoize navigation items mapping to prevent O(N) VDOM node recreation on frequent telemetry updates (every 2 seconds)
+  const memoizedNavigationItems = useMemo(() => {
+    return navigationItems.map((item) => (
+      <NavigationItem
+        key={item.path}
+        className={location.pathname === item.path ? 'active' : ''}
+        onClick={() => handleNavigation(item.path)}
+        isDarkMode={isDarkMode}
+      >
+        <span className="icon">{item.icon}</span>
+        {item.label}
+        <StatusIndicator status={agentStatus} />
+      </NavigationItem>
+    ));
+  }, [location.pathname, isDarkMode, agentStatus, handleNavigation, navigationItems]);
+
   return (
     <SidePanelSidebar isDarkMode={isDarkMode}>
       <SidePanelHeader isDarkMode={isDarkMode}>
@@ -156,18 +172,7 @@ const ModernSidebar = () => {
 
       <SidePanelBody>
         <NavigationList>
-          {navigationItems.map((item) => (
-            <NavigationItem
-              key={item.path}
-              className={location.pathname === item.path ? 'active' : ''}
-              onClick={() => handleNavigation(item.path)}
-              isDarkMode={isDarkMode}
-            >
-              <span className="icon">{item.icon}</span>
-              {item.label}
-              <StatusIndicator status={agentStatus} />
-            </NavigationItem>
-          ))}
+          {memoizedNavigationItems}
         </NavigationList>
 
         <PerformanceBar isDarkMode={isDarkMode}>
