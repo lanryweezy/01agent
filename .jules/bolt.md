@@ -13,3 +13,10 @@
 ## 2024-05-24 - React useMemo on Static Arrays vs Dynamic Telemetry
 **Learning:** In the React frontend, static or infrequently changing array mappings (like `navigationItems` in `ModernSidebar.js`) should be wrapped in `useMemo` to prevent O(N) VDOM node recreation during high-frequency parent state updates (such as telemetry ticks updating `performanceData`). However, you should *not* use `useMemo` to memoize list mappings of real-time or frequently updating data itself (e.g., the execution metrics mappings in `Performance.js`), as this is a premature micro-optimization that provides no measurable impact due to constant recalculation.
 **Action:** Always identify if the mapping is tracking high-frequency changing state or if it's static/infrequently changing but being forced to re-render *because* of sibling high-frequency state updates. Memoize the latter.
+## 2024-05-24 - Hash Map Optimization in React
+**Learning:** Performing `O(N)` linear array scans (like `for` loops to find items by value) inside renders or frequently called functions within components (e.g., `PieSelect`) can degrade performance when scaled.
+**Action:** Replace linear scans with `O(1)` hash map lookups (`Map`). Crucially, wrap the map creation in `useMemo` so it is only rebuilt when the underlying data changes, not on every render.
+
+## 2024-05-24 - React Stale Closures & Linter
+**Learning:** Disabling the `react-hooks/exhaustive-deps` linter rule to omit a function (like an event handler) from a `useMemo` or `useCallback` dependency array to force a micro-optimization is a dangerous anti-pattern. It creates **stale closures** where the memoized function references outdated state or props, breaking component functionality.
+**Action:** Never bypass the exhaustive-deps linter to avoid recalculations. If a function causes unwanted recalculations, wrap the function itself in `useCallback` higher up the component tree.
