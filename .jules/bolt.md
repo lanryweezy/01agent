@@ -10,3 +10,10 @@
 ## 2024-05-24 - React Component Definition Scope Anti-Pattern
 **Learning:** Defining a component (e.g. `SettingItem`) *inside* the render body of another component (e.g. `Settings`) is a major performance anti-pattern. Because the inner function is recreated on every render of the parent (such as when typing in a text field updates the parent's state), React treats it as a fundamentally new component type. This causes the child component to be completely unmounted and remounted rather than just updated, leading to severe DOM thrashing and loss of input focus.
 **Action:** Always extract child components to the module scope (outside the parent component body). Pass any required state from the parent's closure as explicit props. Optionally, wrap the extracted component in `React.memo` if its props are primitives or properly memoized references (like `useCallback`), though extraction alone solves the critical unmount/remount issue.
+## 2024-05-24 - Hash Map Optimization in React
+**Learning:** Performing `O(N)` linear array scans (like `for` loops to find items by value) inside renders or frequently called functions within components (e.g., `PieSelect`) can degrade performance when scaled.
+**Action:** Replace linear scans with `O(1)` hash map lookups (`Map`). Crucially, wrap the map creation in `useMemo` so it is only rebuilt when the underlying data changes, not on every render.
+
+## 2024-05-24 - React Stale Closures & Linter
+**Learning:** Disabling the `react-hooks/exhaustive-deps` linter rule to omit a function (like an event handler) from a `useMemo` or `useCallback` dependency array to force a micro-optimization is a dangerous anti-pattern. It creates **stale closures** where the memoized function references outdated state or props, breaking component functionality.
+**Action:** Never bypass the exhaustive-deps linter to avoid recalculations. If a function causes unwanted recalculations, wrap the function itself in `useCallback` higher up the component tree.

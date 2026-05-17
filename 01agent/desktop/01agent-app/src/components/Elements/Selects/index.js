@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   LabeledSelectContainer,
   VerticalLabeledSelectContainer,
@@ -41,13 +41,17 @@ const PieSelect = ({
 
   const [isOptionsOpen, setOptionsOpen] = useState(false);
 
-  const getItemFromValue = (value) => {
+  // ⚡ Bolt: Use an O(1) hash map to avoid O(N) array scans during renders and loops
+  const itemsByValue = useMemo(() => {
+    const map = new Map();
     for (let i = 0; i < items.length; i++) {
-      if (items[i][itemValue] === value) {
-        return items[i];
-      }
+      map.set(items[i][itemValue], items[i]);
     }
-    return null;
+    return map;
+  }, [items, itemValue]);
+
+  const getItemFromValue = (value) => {
+    return itemsByValue.get(value) || null;
   };
 
   const [inputText, setInputText] = useState(getItemFromValue(value) !== null ? getItemFromValue(value)[itemText] : '');
