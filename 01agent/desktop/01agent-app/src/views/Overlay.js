@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import _01agent_logo_ic_only_white from '../assets/01agent_logo_ic_only_white.png';
 import _01agent_logo_ic_only from '../assets/01agent_logo_ic_only.png';
@@ -165,6 +165,11 @@ export default function Overlay() {
   const [thinkingMode, setThinkingMode] = useState(false);
   const [activeAction, setActiveAction] = useState(null);
   const [isListening, setIsListening] = useState(false);
+  const messageTextRef = useRef(messageText);
+
+  useEffect(() => {
+    messageTextRef.current = messageText;
+  }, [messageText]);
 
   const accessToken = useSelector(state => state.accessToken);
   const isDarkMode = useSelector(state => state.isDarkMode);
@@ -176,13 +181,13 @@ export default function Overlay() {
     createThread();
   };
 
-  const executeSuggestion = (prompt) => {
+  const executeSuggestion = useCallback((prompt) => {
     if (loading) return;
 
     window.electronAPI.expandOverlay(false);
     setShowSuggestions(false);
     createThread(prompt);
-  };
+  }, [loading, createThread]);
 
   const toggleOverlay = async () => {
     if (!expanded) {
@@ -212,7 +217,7 @@ export default function Overlay() {
     setSuggestions(suggestedTasks.suggestions);
   };
 
-  const cancelRunningTask = (tid) => {
+  const cancelRunningTask = useCallback((tid) => {
     setLoading(true);
     axios.post(`/threads/${tid}/cancel_task`, {}, {
       headers: {
@@ -228,14 +233,15 @@ export default function Overlay() {
         window.location.reload();
       }
     });
-  };
+  }, [accessToken]);
 
-  const createThread = async (prompt = null) => {
-    if (messageText.length === 0 && prompt === null) {
+  const createThread = useCallback(async (prompt = null) => {
+    const currentText = messageTextRef.current;
+    if (currentText.length === 0 && prompt === null) {
       return;
     }
 
-    const data = {task: prompt !== null ? prompt : messageText, background_mode: backgroundMode, extended_thinking_mode: thinkingMode};
+    const data = {task: prompt !== null ? prompt : currentText, background_mode: backgroundMode, extended_thinking_mode: thinkingMode};
     setMessageText('');
     setLoading(true);
     axios.post('/threads', data, {
@@ -248,7 +254,7 @@ export default function Overlay() {
         if (!backgroundMode && response.data.is_background_mode_requested) {
           const ready = await window.electronAPI.isBackgroundModeReady();
           if (!ready) {
-            cancelRunningTask();
+            cancelRunningTask(response.data.thread_id);
             return;
           }
         }
@@ -268,7 +274,7 @@ export default function Overlay() {
         window.location.reload();
       }
     });
-  };
+  }, [backgroundMode, thinkingMode, accessToken, cancelRunningTask]);
 
   const toggleVoice = () => {
     if (isListening) {
@@ -360,6 +366,23 @@ export default function Overlay() {
     asyncTask();
   }, []);
 
+  // ⚡ Bolt: Memoize suggestions list mapping to prevent O(N) VDOM node recreation on every keystroke
+  const memoizedSuggestions = useMemo(() => {
+    return suggestions.length === 0
+      ? Array.from({ length: 7 }).map((_, idx) => (
+          <SkeletonItem isDarkMode={isDarkMode} key={idx} />
+        ))
+      : suggestions.map((s, idx) => (
+          <SuggestionItem
+            key={idx}
+            isDarkMode={isDarkMode}
+            onClick={() => executeSuggestion(s.ai_prompt)}
+          >
+            {s.title}
+          </SuggestionItem>
+        ));
+  }, [isDarkMode, suggestions, executeSuggestion]);
+
   return (
     <Container>
       {activeAction && activeAction.params?.x && activeAction.params?.y && (
@@ -443,19 +466,7 @@ export default function Overlay() {
       </div>
       {expanded && showSuggestions && (
         <SuggestionsPanel isDarkMode={isDarkMode}>
-          {suggestions.length === 0
-            ? Array.from({ length: 7 }).map((_, idx) => (
-                <SkeletonItem isDarkMode={isDarkMode} key={idx} />
-              ))
-            : suggestions.map((s, idx) => (
-                <SuggestionItem
-                  key={idx}
-                  isDarkMode={isDarkMode}
-                  onClick={() => executeSuggestion(s.ai_prompt)}
-                >
-                  {s.title}
-                </SuggestionItem>
-              ))}
+          {memoizedSuggestions}
         </SuggestionsPanel>
       )}
     </Container>
