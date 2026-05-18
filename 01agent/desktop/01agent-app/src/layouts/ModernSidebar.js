@@ -82,6 +82,29 @@ const ModernSidebar = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // ⚡ Bolt: Memoize the navigation mapping to prevent O(N) VDOM node recreation during telemetry ticks
+  const memoizedNavigationItems = useMemo(() => {
+    const navigationItems = [
+      { path: '/', label: 'Home', icon: Icons.home },
+      { path: '/threads', label: 'Threads', icon: Icons.threads },
+      { path: '/performance', label: 'Performance', icon: Icons.performance },
+      { path: '/status', label: 'Agent Status', icon: Icons.status },
+      { path: '/settings', label: 'Settings', icon: Icons.settings }
+    ];
+
+    return navigationItems.map((item) => (
+      <NavigationItem
+        key={item.path}
+        className={location.pathname === item.path ? 'active' : ''}
+        onClick={() => navigate(item.path)}
+        isDarkMode={isDarkMode}
+      >
+        <span className="icon">{item.icon}</span>
+        {item.label}
+        <StatusIndicator status={agentStatus} />
+      </NavigationItem>
+    ));
+  }, [location.pathname, isDarkMode, agentStatus, navigate]);
   const navigationItems = React.useMemo(() => [
     { path: '/', label: 'Home', icon: Icons.home },
     { path: '/threads', label: 'Threads', icon: Icons.threads },
