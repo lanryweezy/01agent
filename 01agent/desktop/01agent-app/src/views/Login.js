@@ -2,70 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setAccessToken, setUser } from '../store';
-import styled from 'styled-components';
-
-const LoginContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-  color: white;
-  padding: 2rem;
-`;
-
-const LoginCard = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 3rem;
-  text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  max-width: 400px;
-  width: 100%;
-`;
-
-const Title = styled.h1`
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  background: linear-gradient(45deg, #00ff88, #00ccff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-`;
-
-const Subtitle = styled.p`
-  font-size: 1.1rem;
-  margin-bottom: 2rem;
-  opacity: 0.9;
-`;
-
-const DemoButton = styled.button`
-  background: linear-gradient(45deg, #00ff88, #00ccff);
-  color: #1a1a1a;
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin: 0.5rem;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
-  }
-`;
-
-const InfoText = styled.div`
-  margin-top: 2rem;
-  font-size: 0.9rem;
-  opacity: 0.8;
-  line-height: 1.5;
-`;
 
 function SimpleLogin() {
   const navigate = useNavigate();
@@ -85,25 +21,32 @@ function SimpleLogin() {
   };
 
   return (
-    <LoginContainer>
-      <LoginCard>
-        <Title>🤖 01Agent</Title>
-        <Subtitle>AI Desktop Agent</Subtitle>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-[#1e3c72] to-[#2a5298] text-white p-8">
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-12 text-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/20 w-full max-w-[400px]">
+        <h1 className="text-4xl mb-4 bg-gradient-to-tr from-[#00ff88] to-[#00ccff] bg-clip-text text-transparent">
+          🤖 01Agent
+        </h1>
+        <p className="text-lg mb-8 opacity-90">
+          AI Desktop Agent
+        </p>
         
-        <DemoButton onClick={handleDemoLogin}>
+        <button
+          onClick={handleDemoLogin}
+          className="bg-gradient-to-tr from-[#00ff88] to-[#00ccff] text-[#1a1a1a] border-none py-4 px-8 rounded-lg text-lg font-bold cursor-pointer transition-all duration-300 ease-in-out m-2 hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,255,136,0.3)]"
+        >
           🚀 Enter Demo Mode
-        </DemoButton>
+        </button>
         
-        <InfoText>
-          <p>✨ <strong>Demo Mode Features:</strong></p>
-          <p>• Full dashboard access</p>
-          <p>• Agent control interface</p>
-          <p>• Performance monitoring</p>
-          <p>• Settings configuration</p>
-          <p>• Task management</p>
-        </InfoText>
-      </LoginCard>
-    </LoginContainer>
+        <div className="mt-8 text-sm opacity-80 leading-relaxed text-left inline-block">
+          <p className="mb-2">✨ <strong>Demo Mode Features:</strong></p>
+          <p className="ml-2">• Full dashboard access</p>
+          <p className="ml-2">• Agent control interface</p>
+          <p className="ml-2">• Performance monitoring</p>
+          <p className="ml-2">• Settings configuration</p>
+          <p className="ml-2">• Task management</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
