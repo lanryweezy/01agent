@@ -101,7 +101,7 @@ class Thread(SQLModel, table=True):
 
     id: Optional[str] = Field(primary_key=True, index=True, nullable=False, default_factory=generate_thread_id)
     title: str = Field(nullable=False)
-    user_id: str = Field(foreign_key='users.id')
+    user_id: str = Field(foreign_key='users.id', index=True)
     status: Optional[str] = Field(nullable=False, default=ThreadStatus.STANDBY)
 
     created_at: Optional[datetime.datetime] = Field(
@@ -129,7 +129,7 @@ class ThreadTask(SQLModel, table=True):
     __tablename__ = 'thread_tasks'
 
     id: Optional[int] = Field(default=None, primary_key=True, index=True, nullable=False)
-    thread_id: str = Field(nullable=False, foreign_key='threads.id')
+    thread_id: str = Field(nullable=False, foreign_key='threads.id', index=True)
     status: Optional[str] = Field(nullable=False, default=ThreadTaskStatus.WORKING)
     task_text: str = Field(sa_column=Column(Text, nullable=True))
     needs_memory_from_previous_tasks: bool = Field(default=False)
@@ -163,7 +163,7 @@ class ThreadTaskPlan(SQLModel, table=True):
     __tablename__ = 'thread_task_plans'
 
     id: Optional[int] = Field(default=None, primary_key=True, index=True, nullable=False)
-    thread_task_id: Optional[int] = Field(nullable=True, foreign_key='thread_tasks.id')
+    thread_task_id: Optional[int] = Field(nullable=True, foreign_key='thread_tasks.id', index=True)
     status: Optional[str] = Field(nullable=False, default=ThreadTaskPlanStatus.ACTIVE)
 
     created_at: Optional[datetime.datetime] = Field(
@@ -194,7 +194,7 @@ class PlanSubtask(SQLModel, table=True):
     __tablename__ = 'plan_subtasks'
 
     id: Optional[int] = Field(default=None, primary_key=True, index=True, nullable=False)
-    thread_task_plan_id: Optional[int] = Field(nullable=True, foreign_key='thread_task_plans.id')
+    thread_task_plan_id: Optional[int] = Field(nullable=True, foreign_key='thread_task_plans.id', index=True)
     subtask_text: str = Field(sa_column=Column(Text, nullable=False))
     subtask_type: str = Field(default=SubtaskType.DESKTOP, nullable=False)
     ordering: Optional[int] = Field(nullable=False, default=0)
@@ -252,9 +252,9 @@ class ThreadMessage(SQLModel, table=True):
     __tablename__ = 'thread_messages'
 
     id: Optional[int] = Field(default=None, primary_key=True, index=True, nullable=False)
-    thread_id: str = Field(nullable=False, foreign_key='threads.id')
-    thread_task_id: Optional[int] = Field(nullable=True, foreign_key='thread_tasks.id')
-    plan_subtask_id: Optional[int] = Field(nullable=True, foreign_key='plan_subtasks.id')
+    thread_id: str = Field(nullable=False, foreign_key='threads.id', index=True)
+    thread_task_id: Optional[int] = Field(nullable=True, foreign_key='thread_tasks.id', index=True)
+    plan_subtask_id: Optional[int] = Field(nullable=True, foreign_key='plan_subtasks.id', index=True)
     thread_chat_type: str = Field(nullable=False, default=ThreadChatType.NORMAL_MESSAGE)
     thread_chat_from: str = Field(nullable=False, default=ThreadChatFromChoices.FROM_USER)
     text: str = Field(sa_column=Column(Text, nullable=True))
@@ -304,7 +304,7 @@ class ScheduledAutomation(SQLModel, table=True):
     __tablename__ = 'scheduled_automations'
 
     id: Optional[int] = Field(default=None, primary_key=True, index=True, nullable=False)
-    user_id: str = Field(foreign_key='users.id')
+    user_id: str = Field(foreign_key='users.id', index=True)
     name: str = Field(max_length=200)
     task_text: str = Field(sa_column=Column(Text))
     cron_expression: str = Field(max_length=100) # e.g. "0 16 * * 5"

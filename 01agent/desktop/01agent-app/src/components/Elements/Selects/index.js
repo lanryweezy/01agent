@@ -105,7 +105,7 @@ const PieSelect = ({
     }
   };
 
-  const getItems = () => {
+  const filteredItems = useMemo(() => {
     if (multiple) {
       return items;
     } else {
@@ -124,9 +124,10 @@ const PieSelect = ({
           returnedItems.push(items[i]);
         }
       }
-    return returnedItems;
+      return returnedItems;
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, multiple, value, itemText, inputText]);
 
   const selectRef = useRef();
 
@@ -201,7 +202,7 @@ const PieSelect = ({
                   <OptionsDiv>
                     <OptionsDivContainer>
                       {
-                        getItems().map((item, key) => {
+                        filteredItems.map((item, key) => {
                           return <ListItem clickable onClick={() => onItemSelected(item[itemValue])} key={'option__' + key}>
                             <ListItemContent>
                               <ListItemTitle fontWeight="400" fontSize="14px">
@@ -270,7 +271,7 @@ const PieSelect = ({
                 <OptionsDiv>
                   <OptionsDivContainer>
                     {
-                      getItems().map((item, key) => {
+                      filteredItems.map((item, key) => {
                         return <ListItem clickable onClick={() => onItemSelected(item[itemValue])} key={'option__' + key}>
                           <ListItemContent>
                             <ListItemTitle fontWeight="400" fontSize="14px">
@@ -334,7 +335,7 @@ const PieSelect = ({
           isOptionsOpen ?
           <OptionsDiv>
             {
-              getItems().map((item, key) => {
+              filteredItems.map((item, key) => {
                 return <ListItem clickable onClick={() => onItemSelected(item[itemValue])} key={'option__' + key}>
                   <ListItemContent>
                     <ListItemTitle fontWeight="400" fontSize="14px">
