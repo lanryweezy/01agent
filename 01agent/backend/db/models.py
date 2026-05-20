@@ -51,7 +51,7 @@ class LoginSession(SQLModel, table=True):
     __tablename__ = 'login_sessions'
 
     id: Optional[int] = Field(default=None, primary_key=True, index=True, nullable=False)
-    user_id: str = Field(foreign_key='users.id')
+    user_id: str = Field(foreign_key='users.id', index=True)
     notification_token: Optional[str]
     expires_at: datetime.datetime
     refresh_expires_at: datetime.datetime
@@ -218,7 +218,7 @@ class ThreadTaskMemoryEntry(SQLModel, table=True):
     __tablename__ = 'thread_task_memory_entries'
 
     id: Optional[int] = Field(default=None, primary_key=True, index=True, nullable=False)
-    thread_task_id: Optional[int] = Field(nullable=True, foreign_key='thread_tasks.id')
+    thread_task_id: Optional[int] = Field(nullable=True, foreign_key='thread_tasks.id', index=True)
     text: str = Field(sa_column=Column(Text, nullable=False))
 
     created_at: Optional[datetime.datetime] = Field(
@@ -284,7 +284,7 @@ class Skill(SQLModel, table=True):
     name: str = Field(index=True, unique=True, max_length=100)
     description: str = Field(sa_column=Column(Text))
     instructions: str = Field(sa_column=Column(Text))
-    author_id: Optional[str] = Field(default=None, foreign_key='users.id')
+    author_id: Optional[str] = Field(default=None, foreign_key='users.id', index=True)
     is_public: bool = Field(default=False)
     usage_count: int = Field(default=0)
 
