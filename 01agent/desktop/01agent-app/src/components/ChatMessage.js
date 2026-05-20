@@ -1,100 +1,83 @@
 import React, { useMemo } from 'react';
-import styled from 'styled-components';
 import { useSelector } from 'react-redux';
-import { Tag } from './Elements/Tag';
-
 import {
-  FaMousePointer,
-  FaRegKeyboard,
-  FaCheckCircle,
-  FaScroll,
-  FaPause
-} from 'react-icons/fa';
-import {
-  MdOutlineOpenInBrowser,
-  MdDragIndicator,
+  MousePointer2,
+  Keyboard,
+  CheckCircle2,
+  Scroll,
+  Pause,
+  ExternalLink,
+  Move,
+  AlertCircle,
+  LayoutGrid,
+  Monitor,
+  CornerDownRight,
+  Brain,
+  Code,
+  Box,
+  Terminal,
+  Activity
+} from 'lucide-react';
 
-  MdError,
-  MdApps,
-  MdScreenShare
-} from 'react-icons/md';
-import { FiCornerDownRight } from 'react-icons/fi';
-import { GiBrain } from 'react-icons/gi';
-
-const MessageContainer = styled.div`
-  display: flex;
-  justify-content: ${({ role }) => (role === 'user' ? 'flex-end' : 'flex-start')};
-  padding: 10px 18px;
-`;
-
-const Bubble = styled.div`
-  background-color: var(--surface-dark); /* Consistent dark background */
-  color: var(--text-light); /* Consistent light text */
-  padding: 14px 18px;
-  border-radius: 4px; /* Sharper corners for block look */
-  max-width: 65%;
-  box-shadow: none; /* Remove shadow for flatter look */
-  border: 1px solid var(--border-dark); /* Subtle border for block definition */
-  font-size: 14.5px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-word;
-  /* Remove conditional border-radius for consistent block shape */
-`;
-
-const ThoughtBox = styled.div`
-  font-style: italic;
-  opacity: 0.9;
-  padding: 10px;
-  background-color: var(--background-dark); /* Use darker background for thought box */
-  border-left: 3px solid var(--sci-fi-green); /* Sci-fi green accent */
-  border-radius: 4px; /* Sharper corners */
-  margin-top: 6px;
-  font-size: 13px;
-`;
-
-const Label = styled.div`
-  font-size: 13px;
-  color: var(--text-light); /* Use theme variable for consistency */
-  margin-top: 8px;
-`;
-
-const Spacer = styled.div`
-  height: 6px;
-`;
-
-// ⚡ Bolt: Memoize ChatMessage to prevent unnecessary re-renders of the entire message history
-// when the parent Thread's messageText state updates on every keystroke.
-const iconStyle = { color: 'var(--sci-fi-green)', fontSize: '15px' }; // Always sci-fi green for icons
+const iconClass = "w-4 h-4 text-emerald-400";
 
 const actionMap = {
-  mouse_move: { label: 'Move Cursor', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
-  left_click: { label: 'Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
-  right_click: { label: 'Right Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
-  double_click: { label: 'Double Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
-  triple_click: { label: 'Triple Click', color: 'var(--sci-fi-green)', icon: <FaMousePointer style={iconStyle} /> },
-  left_click_drag: { label: 'Click & Drag', color: 'var(--sci-fi-green)', icon: <MdDragIndicator style={iconStyle} /> },
-  left_mouse_down: { label: 'Mouse Down', color: 'var(--sci-fi-green)', icon: <MdDragIndicator style={iconStyle} /> },
-  left_mouse_up: { label: 'Mouse Up', color: 'var(--sci-fi-green)', icon: <MdDragIndicator style={iconStyle} /> },
-  scroll: { label: 'Scroll', color: 'var(--sci-fi-green)', icon: <FaScroll style={iconStyle} /> },
-  type: { label: 'Type Text', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
-  key: { label: 'Press Key', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
-  hold_key: { label: 'Hold Key', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
-  key_combo: { label: 'Key Combo', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
-  wait: { label: 'Wait', color: 'var(--sci-fi-green)', icon: <FaPause style={iconStyle} /> },
-  launch_browser: { label: 'Launch Browser', color: 'var(--sci-fi-green)', icon: <MdOutlineOpenInBrowser style={iconStyle} /> },
-  launch_app: { label: 'Launch App', color: 'var(--sci-fi-green)', icon: <MdApps style={iconStyle} /> },
-  focus_app: { label: 'Switch To App', color: 'var(--sci-fi-green)', icon: <MdApps style={iconStyle} /> },
-  request_screenshot: { label: 'Request Screenshot', color: 'var(--sci-fi-green)', icon: <MdScreenShare style={iconStyle} /> },
-  tool_use: { label: 'Tool Use', color: 'var(--sci-fi-green)', icon: <FaRegKeyboard style={iconStyle} /> },
-  subtask_completed: { label: 'Step Completed', color: 'var(--sci-fi-green)', icon: <FaCheckCircle style={iconStyle} /> },
-  subtask_failed: { label: 'Step Failed', color: 'var(--danger-color)', icon: <MdError style={iconStyle} /> }
+  mouse_move: { label: 'Move Cursor', color: 'emerald', icon: <MousePointer2 className={iconClass} /> },
+  left_click: { label: 'Click', color: 'emerald', icon: <MousePointer2 className={iconClass} /> },
+  right_click: { label: 'Right Click', color: 'emerald', icon: <MousePointer2 className={iconClass} /> },
+  double_click: { label: 'Double Click', color: 'emerald', icon: <MousePointer2 className={iconClass} /> },
+  triple_click: { label: 'Triple Click', color: 'emerald', icon: <MousePointer2 className={iconClass} /> },
+  left_click_drag: { label: 'Click & Drag', color: 'emerald', icon: <Move className={iconClass} /> },
+  left_mouse_down: { label: 'Mouse Down', color: 'emerald', icon: <Move className={iconClass} /> },
+  left_mouse_up: { label: 'Mouse Up', color: 'emerald', icon: <Move className={iconClass} /> },
+  scroll: { label: 'Scroll', color: 'emerald', icon: <Scroll className={iconClass} /> },
+  type: { label: 'Type Text', color: 'emerald', icon: <Keyboard className={iconClass} /> },
+  key: { label: 'Press Key', color: 'emerald', icon: <Keyboard className={iconClass} /> },
+  hold_key: { label: 'Hold Key', color: 'emerald', icon: <Keyboard className={iconClass} /> },
+  key_combo: { label: 'Key Combo', color: 'emerald', icon: <Keyboard className={iconClass} /> },
+  wait: { label: 'Wait', color: 'slate', icon: <Pause className="w-4 h-4 text-slate-400" /> },
+  launch_browser: { label: 'Launch Browser', color: 'cyan', icon: <ExternalLink className="w-4 h-4 text-cyan-400" /> },
+  launch_app: { label: 'Launch App', color: 'emerald', icon: <LayoutGrid className={iconClass} /> },
+  focus_app: { label: 'Switch To App', color: 'emerald', icon: <LayoutGrid className={iconClass} /> },
+  request_screenshot: { label: 'Capture Screen', color: 'emerald', icon: <Monitor className={iconClass} /> },
+  tool_use: { label: 'Tool Exec', color: 'emerald', icon: <Terminal className={iconClass} /> },
+  subtask_completed: { label: 'Step Success', color: 'emerald', icon: <CheckCircle2 className={iconClass} /> },
+  subtask_failed: { label: 'Step Error', color: 'rose', icon: <AlertCircle className="w-4 h-4 text-rose-400" /> }
 };
 
+const Tag = ({ children, color = "emerald" }) => {
+  const colors = {
+    emerald: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    cyan: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+    rose: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+    slate: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+  };
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border ${colors[color] || colors.emerald}`}>
+      {children}
+    </span>
+  );
+};
+
+const ThoughtBox = ({ children, title = "REASONING" }) => (
+  <div className="mt-3 bg-black/30 border border-white/5 rounded-lg overflow-hidden">
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border-b border-white/5">
+      <Brain className="w-3.5 h-3.5 text-cyan-400" />
+      <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">{title}</span>
+    </div>
+    <div className="p-3 text-xs text-slate-300 leading-relaxed font-mono whitespace-pre-wrap italic opacity-80">
+      {children}
+    </div>
+  </div>
+);
+
+const Label = ({ children }) => (
+  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mr-2">{children}</span>
+);
+
 const ChatMessage = React.memo(({ message }) => {
-  const isDarkMode = useSelector(state => state.isDarkMode);
   const isUser = message.thread_chat_from !== 'from_ai';
-  const role = isUser ? 'user' : 'assistant';
 
   const parsedMessage = useMemo(() => {
     if (message.thread_chat_type === 'normal_message') return null;
@@ -105,234 +88,145 @@ const ChatMessage = React.memo(({ message }) => {
     }
   }, [message.text, message.thread_chat_type]);
 
-  // ⚡ Bolt: Memoize content rendering to avoid expensive JSON.stringify inside mappings on every render
   const memoizedContent = useMemo(() => {
     const type = message.thread_chat_type;
     const raw = message.text;
 
-    if (type === 'normal_message') return <>{raw}</>;
+    if (type === 'normal_message') return <div className="text-[14.5px] text-slate-200 leading-relaxed">{raw}</div>;
 
     let parsed = parsedMessage;
-    if (!parsed) {
-      return '[Failed to parse message]';
-    }
+    if (!parsed) return <div className="text-rose-400 text-xs italic">[Unparsable System Event]</div>;
 
     if (type === 'classification') {
       const isDesktop = parsed.type === 'desktop_task';
       return (
-        <>
-          <Tag>
-            {isDesktop ? <MdOutlineOpenInBrowser style={iconStyle} /> : <FiCornerDownRight style={iconStyle} />}
-            {isDesktop ? 'Desktop Task' : 'Inquiry'}
+        <div className="space-y-3">
+          <Tag color={isDesktop ? 'emerald' : 'cyan'}>
+            {isDesktop ? <Monitor className="w-3 h-3" /> : <CornerDownRight className="w-3 h-3" />}
+            {isDesktop ? 'Desktop Automation' : 'User Inquiry'}
           </Tag>
-          <Spacer />
-          <div>{parsed.response}</div>
-        </>
+          <div className="text-[14.5px] text-slate-300">{parsed.response}</div>
+        </div>
       );
     }
 
     if (type === 'action') {
-      const actionMeta = actionMap[parsed.action] || {
-        label: parsed.action,
-        icon: <FaMousePointer style={iconStyle} />
-      };
-
+      const actionMeta = actionMap[parsed.action] || { label: parsed.action, icon: <Activity className={iconClass} /> };
       return (
-        <>
-          <Tag color={actionMeta.color}>
-            {actionMeta.icon}
-            {actionMeta.label}
-          </Tag>
-
-          {parsed.action === 'tool_use' && (
-            <>
-              {parsed.tool && <><Label>Tool:</Label> {parsed.tool}</>}
-              {parsed.args && (
-                <>
-                  <Label>Arguments:</Label> {JSON.stringify(parsed.args)}
-                </>
-              )}
-            </>
-          )}
-
-          {parsed.text && <><Label>Text:</Label> {parsed.text}</>}
-          {parsed.url && <><Label>URL:</Label> {parsed.url}</>}
-          {parsed.app_name && <><Label>App Name:</Label> {parsed.app_name}</>}
-          {parsed.coordinate && (
-            <>
-              <Label>Coordinate:</Label> ({parsed.coordinate.x}, {parsed.coordinate.y})
-            </>
-          )}
-          {parsed.from && parsed.to && (
-            <>
-              <Label>Drag:</Label> From ({parsed.from.x}, {parsed.from.y}) → ({parsed.to.x}, {parsed.to.y})
-            </>
-          )}
-          {parsed.duration && <><Label>Duration:</Label> {parsed.duration}s</>}
+        <div className="space-y-2">
+          <Tag color={actionMeta.color}>{actionMeta.icon}{actionMeta.label}</Tag>
+          <div className="text-sm text-slate-300 grid gap-1 ml-1">
+            {parsed.action === 'tool_use' && (
+              <>
+                <div><Label>EXECUTING:</Label><span className="font-mono text-emerald-400">{parsed.tool}</span></div>
+                {parsed.args && <div className="bg-black/20 p-2 rounded mt-1 font-mono text-[11px] border border-white/5"><Label>PARAMS:</Label>{JSON.stringify(parsed.args)}</div>}
+              </>
+            )}
+            {parsed.text && <div><Label>INPUT:</Label>{parsed.text}</div>}
+            {parsed.url && <div><Label>TARGET:</Label><span className="text-cyan-400 underline">{parsed.url}</span></div>}
+            {parsed.app_name && <div><Label>APP:</Label>{parsed.app_name}</div>}
+            {parsed.coordinate && <div><Label>POS:</Label><span className="font-mono text-xs">({parsed.coordinate.x}, {parsed.coordinate.y})</span></div>}
+          </div>
           {parsed.reasoning && <ThoughtBox>{parsed.reasoning}</ThoughtBox>}
-        </>
+        </div>
       );
     }
 
-    if (type === 'browser_use' || type === 'bg_mode_browser') {
+    if (type === 'browser_use' || type === 'bg_mode_browser' || type === 'bg_mode_browser_v2') {
       return (
-        <>
-          <Tag><MdOutlineOpenInBrowser style={iconStyle} />Using The Browser</Tag>
-          <Spacer />
-    
+        <div className="space-y-3">
+          <Tag color="cyan"><ExternalLink className="w-3 h-3" />Web Browser Protocol</Tag>
           {parsed.current_state && (
-            <div style={{ marginBottom: '10px' }}>
-              <strong>Evaluation:</strong> {parsed.current_state.evaluation_previous_goal}<br />
-              <strong>Memory:</strong> {parsed.current_state.memory}<br />
-              <strong>Next Goal:</strong> {parsed.current_state.next_goal}
+            <div className="text-xs space-y-2 text-slate-400 bg-white/5 p-3 rounded-lg border border-white/5">
+              <div><Label>EVAL:</Label>{parsed.current_state.evaluation_previous_goal || parsed.current_state.current_evaluation}</div>
+              <div><Label>MEM:</Label>{parsed.current_state.memory}</div>
+              <div className="text-cyan-400"><Label>NEXT:</Label>{parsed.current_state.next_goal || parsed.current_state.next_steps}</div>
             </div>
           )}
-    
-          {parsed.action && Array.isArray(parsed.action) && parsed.action.length > 0 && (
-            <div>
-              <strong>Next Actions:</strong>
-              <ol style={{ marginTop: '8px', paddingLeft: '20px' }}>
-                {parsed.action.map((act, idx) => {
-                  const actionType = Object.keys(act)[0];
-                  const params = act[actionType];
-    
-                  return (
-                    <li key={idx} style={{ marginBottom: '8px' }}>
-                      <strong>Action:</strong> {actionType}<br />
-                      {params && Object.keys(params).map((key) => (
-                        <div key={key}>
-                          <strong>{key}:</strong> {typeof params[key] === 'object' ? JSON.stringify(params[key]) : params[key]}
-                        </div>
-                      ))}
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          )}
-        </>
-      );
-    }
-
-    if (type === 'desktop_use') {
-      return (
-        <>
-          <Tag><MdApps style={iconStyle} />Using The Desktop</Tag>
-          <Spacer />
-    
-          {parsed.current_state && (
-            <div style={{ marginBottom: '10px' }}>
-              <strong>Evaluation:</strong> {parsed.current_state.current_evaluation}<br />
-              <strong>Memory:</strong> {parsed.current_state.memory}<br />
-              <strong>Next Goal:</strong> {parsed.current_state.next_steps}
-            </div>
-          )}
-    
-          {parsed.action && (
-            <div>
-              <strong>Next Action:</strong><br />
-              <Tag color={actionMap[parsed.action]?.color || 'var(--primary-color)'}>
-                {actionMap[parsed.action]?.icon || <FaMousePointer style={iconStyle} />}
-                {actionMap[parsed.action]?.label || parsed.action}
-              </Tag>
-    
-              <div style={{ marginTop: '6px' }}>
-                {Object.entries(parsed)
-                  .filter(([key]) => key !== 'action' && key !== 'current_state')
-                  .map(([key, value]) => (
-                    <div key={key}><strong>{key}:</strong> {typeof value === 'object' ? JSON.stringify(value) : value}</div>
-                  ))}
-              </div>
-            </div>
-          )}
-        </>
-      );
-    }
-
-    if (type === 'desktop_use_v2' || type === 'bg_mode_browser_v2') {
-      return (
-        <>
-          {
-            type === 'desktop_use_v2' ? <Tag><MdApps style={iconStyle} />Using The Desktop</Tag> : <Tag><MdOutlineOpenInBrowser style={iconStyle} />Using The Background Browser</Tag>
-          }
-          <Spacer />
-
-          {parsed.current_state && (
-            <div style={{ marginBottom: '10px' }}>
-              <strong>Evaluation:</strong> {parsed.current_state.evaluation_previous_goal}<br />
-              <strong>Memory:</strong> {parsed.current_state.memory}<br />
-              <strong>Next Goal:</strong> {parsed.current_state.next_goal}
-            </div>
-          )}
-
-          {parsed.actions && parsed.actions.length > 0 && (
-            <div>
-              <strong>Next Actions:</strong>
-              <ol style={{ marginTop: '8px', paddingLeft: '20px' }}>
-                {parsed.actions.map((actionObj, idx) => (
-                  <li key={idx} style={{ marginBottom: '8px' }}>
-                    <Tag color={actionMap[actionObj.action]?.color || 'var(--primary-color)'}>
-                      {actionMap[actionObj.action]?.icon || <FaMousePointer style={iconStyle} />}
-                      {actionMap[actionObj.action]?.label || actionObj.action}
-                    </Tag>
-                    {actionObj.params && Object.entries(actionObj.params).map(([key, value]) => (
-                      <div key={key}><strong>{key}:</strong> {typeof value === 'object' ? JSON.stringify(value) : value}</div>
-                    ))}
-                  </li>
+          {parsed.actions && (
+             <div className="space-y-2">
+                {parsed.actions.map((act, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[11px] font-mono text-emerald-400">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/50" />
+                    {act.action} ({JSON.stringify(act.params)})
+                  </div>
                 ))}
-              </ol>
+             </div>
+          )}
+        </div>
+      );
+    }
+
+    if (type === 'desktop_use' || type === 'desktop_use_v2') {
+      return (
+        <div className="space-y-3">
+          <Tag><Monitor className="w-3 h-3" />Native OS Execution</Tag>
+          {parsed.current_state && (
+            <div className="text-xs space-y-2 text-slate-400 bg-white/5 p-3 rounded-lg border border-white/5">
+              <div><Label>EVAL:</Label>{parsed.current_state.current_evaluation || parsed.current_state.evaluation_previous_goal}</div>
+              <div className="text-emerald-400"><Label>PLAN:</Label>{parsed.current_state.next_steps || parsed.current_state.next_goal}</div>
             </div>
           )}
-        </>
+          {parsed.action && (
+            <div className="flex items-center gap-3 bg-emerald-500/5 p-2 rounded border border-emerald-500/10">
+               {actionMap[parsed.action]?.icon || <Activity className={iconClass} />}
+               <span className="text-xs font-bold text-emerald-400 uppercase">{parsed.action}</span>
+            </div>
+          )}
+        </div>
       );
     }
 
     if (type === 'plan') {
       return (
-        <>
-          <Tag><FiCornerDownRight style={iconStyle} />Plan</Tag>
-          <Spacer />
-          {parsed.subtasks?.length > 0 ? (
-            <ol style={{ margin: 0, paddingLeft: 20 }}>
-              {parsed.subtasks.map((step, idx) => (
-                <li key={idx}>
-                  <div><strong>Step:</strong> {step.subtask}</div>
-                  <div><strong>Type:</strong> {step.type === 'browser_subtask' ? 'Browser' : 'Desktop'}</div>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <div>[Empty plan]</div>
-          )}
-        </>
+        <div className="space-y-4">
+          <Tag color="cyan"><Code className="w-3 h-3" />Strategic Plan</Tag>
+          <div className="space-y-2 ml-1">
+            {parsed.subtasks?.map((step, idx) => (
+              <div key={idx} className="flex items-start gap-3 group">
+                <div className="mt-1 w-5 h-5 rounded bg-white/5 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-white/5 group-hover:border-cyan-500/30 transition-colors">
+                  {idx + 1}
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-slate-200">{step.subtask}</div>
+                  <div className="text-[9px] uppercase tracking-tighter text-slate-500">Layer: {step.type}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       );
     }
 
     if (type === 'thinking' && message.chain_of_thought) {
-      return (
-        <>
-          <Tag><GiBrain style={iconStyle} />Thinking</Tag>
-          <Spacer />
-          <ThoughtBox>{message.chain_of_thought}</ThoughtBox>
-        </>
-      );
+      return <ThoughtBox title="EXTENDED THINKING">{message.chain_of_thought}</ThoughtBox>;
     }
 
-    return '[Unknown message type]';
+    return <div className="text-xs text-slate-500">[System Interaction Layer: {type}]</div>;
   }, [message.thread_chat_type, message.text, parsedMessage, message.chain_of_thought]);
 
   return (
-    <MessageContainer role={role}>
-      <Bubble role={role} isDarkMode={isDarkMode}>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} group animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+      <div className={`
+        relative max-w-[85%] xl:max-w-[70%] p-4 rounded-2xl border transition-all
+        ${isUser
+          ? 'bg-emerald-600/10 border-emerald-500/20 rounded-tr-none'
+          : 'bg-white/[0.03] border-white/10 rounded-tl-none backdrop-blur-sm'
+        }
+      `}>
         {memoizedContent}
-      </Bubble>
-    </MessageContainer>
+
+        {/* Timestamp/Role hint */}
+        <div className={`absolute -bottom-5 text-[9px] font-bold tracking-widest uppercase opacity-0 group-hover:opacity-40 transition-opacity whitespace-nowrap ${isUser ? 'right-0 text-emerald-500' : 'left-0 text-slate-400'}`}>
+           {isUser ? 'Primary User' : 'Core AI Proxy'}
+        </div>
+      </div>
+    </div>
   );
 }, (prevProps, nextProps) => {
   return prevProps.message.id === nextProps.message.id &&
          prevProps.message.text === nextProps.message.text &&
          prevProps.message.thread_chat_type === nextProps.message.thread_chat_type &&
-         prevProps.message.thread_chat_from === nextProps.message.thread_chat_from &&
          prevProps.message.chain_of_thought === nextProps.message.chain_of_thought;
 });
 

@@ -1,40 +1,45 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
-  SidePanelSidebar,
-  SidePanelHeader,
-  SidePanelTitle,
-  SidePanelBody,
-  NavigationList,
-  NavigationItem,
-  StatusIndicator,
-  PerformanceBar,
-  PerformanceTitle,
-  PerformanceMetric,
-  QuickActionButton,
-  Badge
-} from './ModernContainers';
+  Home,
+  MessageSquare,
+  BarChart3,
+  Search,
+  Settings,
+  Moon,
+  Sun,
+  Play,
+  Square,
+  RefreshCw,
+  Zap,
+  Cpu,
+  Brain,
+  Rocket,
+  Activity,
+  User as UserIcon,
+  LayoutDashboard
+} from 'lucide-react';
 import { setDarkMode } from '../store';
-// import theme from '../theme/GlobalTheme';
 
-// Enhanced Icons with better visual hierarchy
-const Icons = {
-  home: '🏠',
-  threads: '💬',
-  settings: '⚙️',
-  performance: '📊',
-  status: '🔍',
-  darkMode: '🌙',
-  lightMode: '☀️',
-  play: '▶️',
-  stop: '⏹️',
-  refresh: '🔄',
-  logo: '🤖',
-  lightning: '⚡',
-  brain: '🧠',
-  rocket: '🚀'
-};
+const NavItem = ({ icon: Icon, label, path, active, onClick, status }) => (
+  <button
+    onClick={() => onClick(path)}
+    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${
+      active
+        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg shadow-emerald-500/5'
+        : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent'
+    }`}
+  >
+    <div className="flex items-center gap-3">
+      <Icon className={`w-5 h-5 ${active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'} transition-colors`} />
+      <span className="text-sm font-bold uppercase tracking-wider">{label}</span>
+    </div>
+    {status === 'working' && active && (
+      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+    )}
+  </button>
+);
 
 const ModernSidebar = () => {
   const navigate = useNavigate();
@@ -46,15 +51,14 @@ const ModernSidebar = () => {
   
   const [agentStatus, setAgentStatus] = useState('idle');
   const [performanceData, setPerformanceData] = useState({
-    cpu: 0,
-    memory: 0,
-    tasks: 0,
-    successRate: 0
+    cpu: 24.8,
+    memory: 42.1,
+    tasks: 12,
+    successRate: 98.2
   });
   const [isAgentRunning, setIsAgentRunning] = useState(false);
 
   useEffect(() => {
-    // Listen for agent status updates
     if (window.electronAPI?.onAIAgentLaunch) {
       window.electronAPI.onAIAgentLaunch(() => {
         setIsAgentRunning(true);
@@ -69,220 +73,155 @@ const ModernSidebar = () => {
       });
     }
 
-    // Simulate performance data updates
     const interval = setInterval(() => {
-      setPerformanceData(() => ({
-        cpu: Math.random() * 100,
-        memory: Math.random() * 100,
-        tasks: Math.floor(Math.random() * 50),
-        successRate: 85 + Math.random() * 15
+      setPerformanceData(prev => ({
+        ...prev,
+        cpu: 15 + Math.random() * 20,
+        memory: 40 + Math.random() * 5
       }));
-    }, 2000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
 
-  // ⚡ Bolt: Memoize the navigation mapping to prevent O(N) VDOM node recreation during telemetry ticks
-  const memoizedNavigationItems = useMemo(() => {
-    const navigationItems = [
-      { path: '/', label: 'Home', icon: Icons.home },
-      { path: '/threads', label: 'Threads', icon: Icons.threads },
-      { path: '/performance', label: 'Performance', icon: Icons.performance },
-      { path: '/status', label: 'Agent Status', icon: Icons.status },
-      { path: '/settings', label: 'Settings', icon: Icons.settings }
-    ];
-
-    return navigationItems.map((item) => (
-      <NavigationItem
-        key={item.path}
-        className={location.pathname === item.path ? 'active' : ''}
-        onClick={() => navigate(item.path)}
-        isDarkMode={isDarkMode}
-      >
-        <span className="icon">{item.icon}</span>
-        {item.label}
-        <StatusIndicator status={agentStatus} />
-      </NavigationItem>
-    ));
-  }, [location.pathname, isDarkMode, agentStatus, navigate]);
-  const navigationItems = React.useMemo(() => [
-    { path: '/', label: 'Home', icon: Icons.home },
-    { path: '/threads', label: 'Threads', icon: Icons.threads },
-    { path: '/performance', label: 'Performance', icon: Icons.performance },
-    { path: '/status', label: 'Agent Status', icon: Icons.status },
-    { path: '/settings', label: 'Settings', icon: Icons.settings }
-  ], []);
-
-  const handleNavigation = React.useCallback((path) => {
-    navigate(path);
-  }, [navigate]);
-
-  const toggleDarkMode = async () => {
+  const toggleDarkMode = useCallback(() => {
     const newDarkMode = !isDarkMode;
     dispatch(setDarkMode(newDarkMode));
     if (window.electronAPI?.setDarkMode) {
       window.electronAPI.setDarkMode(newDarkMode);
     }
-  };
+  }, [isDarkMode, dispatch]);
 
-  const startAgent = async () => {
+  const startAgent = useCallback(() => {
     if (window.electronAPI?.launchAIAgent) {
       const baseURL = process.env.REACT_APP_PROTOCOL + '://' + process.env.REACT_APP_DNS;
-      const threadId = 'default'; // You might want to get this from state
-      const backgroundMode = false;
-      
-      window.electronAPI.launchAIAgent(baseURL, threadId, backgroundMode);
+      window.electronAPI.launchAIAgent(baseURL, 'system', false);
     }
-  };
+  }, []);
 
-  const stopAgent = async () => {
-    if (window.electronAPI?.stopAIAgent) {
-      window.electronAPI.stopAIAgent();
-    }
-  };
+  const stopAgent = useCallback(() => {
+    window.electronAPI?.stopAIAgent?.();
+  }, []);
 
-  const refreshPerformance = () => {
-    // Trigger performance data refresh
-    setPerformanceData(prev => ({
-      ...prev,
-      cpu: Math.random() * 100,
-      memory: Math.random() * 100
-    }));
-  };
-
-  // ⚡ Bolt: Memoize navigation items mapping to prevent O(N) VDOM node recreation on frequent telemetry updates (every 2 seconds)
-  const memoizedNavigationItems = useMemo(() => {
-    return navigationItems.map((item) => (
-      <NavigationItem
-        key={item.path}
-        className={location.pathname === item.path ? 'active' : ''}
-        onClick={() => handleNavigation(item.path)}
-        isDarkMode={isDarkMode}
-      >
-        <span className="icon">{item.icon}</span>
-        {item.label}
-        <StatusIndicator status={agentStatus} />
-      </NavigationItem>
-    ));
-  }, [location.pathname, isDarkMode, agentStatus, handleNavigation, navigationItems]);
+  const navItems = useMemo(() => [
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/', label: 'Quick Task', icon: Rocket },
+    { path: '/threads', label: 'History', icon: MessageSquare },
+    { path: '/performance', label: 'Analytics', icon: BarChart3 },
+    { path: '/status', label: 'Diagnostic', icon: Search },
+    { path: '/settings', label: 'System', icon: Settings }
+  ], []);
 
   return (
-    <SidePanelSidebar isDarkMode={isDarkMode}>
-      <SidePanelHeader isDarkMode={isDarkMode}>
-        <SidePanelTitle isDarkMode={isDarkMode}>
-          <span className="icon">{Icons.logo}</span>
-          01Agent
-          <Badge variant={agentStatus === 'working' ? 'success' : agentStatus === 'error' ? 'error' : 'default'} isDarkMode={isDarkMode}>
-            {agentStatus}
-          </Badge>
-        </SidePanelTitle>
-        <div style={{ display: 'flex', gap: '8px' }}>
+    <aside className="w-72 bg-[#0d1324] border-r border-white/5 flex flex-col h-full overflow-hidden">
+      {/* Header */}
+      <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
+                <Brain className="w-6 h-6 text-slate-900" />
+             </div>
+             <div>
+               <h2 className="text-lg font-black text-white tracking-tighter uppercase">01Agent</h2>
+               <div className="flex items-center gap-1.5">
+                  <div className={`w-1.5 h-1.5 rounded-full ${agentStatus === 'working' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-600'}`} />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{agentStatus}</span>
+               </div>
+             </div>
+          </div>
           <button
             onClick={toggleDarkMode}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '16px',
-              padding: '4px'
-            }}
-            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
           >
-            {isDarkMode ? Icons.lightMode : Icons.darkMode}
+            {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-400" />}
           </button>
         </div>
-      </SidePanelHeader>
 
-      <SidePanelBody>
-        <NavigationList>
-          {memoizedNavigationItems}
-        </NavigationList>
+        <nav className="space-y-2">
+          {navItems.map((item) => (
+            <NavItem
+              key={item.path}
+              {...item}
+              active={location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))}
+              onClick={(path) => navigate(path)}
+              status={agentStatus}
+            />
+          ))}
+        </nav>
+      </div>
 
-        <PerformanceBar isDarkMode={isDarkMode}>
-          <PerformanceTitle isDarkMode={isDarkMode}>
-            Quick Stats
-          </PerformanceTitle>
-          
-          <PerformanceMetric isDarkMode={isDarkMode}>
-            <span className="label">CPU Usage</span>
-            <span className="value">{performanceData.cpu.toFixed(1)}%</span>
-          </PerformanceMetric>
-          
-          <PerformanceMetric isDarkMode={isDarkMode}>
-            <span className="label">Memory</span>
-            <span className="value">{performanceData.memory.toFixed(1)}%</span>
-          </PerformanceMetric>
-          
-          <PerformanceMetric isDarkMode={isDarkMode}>
-            <span className="label">Tasks</span>
-            <span className="value">{performanceData.tasks}</span>
-          </PerformanceMetric>
-          
-          <PerformanceMetric isDarkMode={isDarkMode}>
-            <span className="label">Success Rate</span>
-            <span className="value">{performanceData.successRate.toFixed(1)}%</span>
-          </PerformanceMetric>
-        </PerformanceBar>
-
-        <div style={{ padding: '16px 20px' }}>
-          <PerformanceTitle isDarkMode={isDarkMode}>
-            Quick Actions
-          </PerformanceTitle>
-          
-          {!isAgentRunning ? (
-            <QuickActionButton
-              primary
-              isDarkMode={isDarkMode}
-              onClick={startAgent}
-            >
-              <span className="icon">{Icons.play}</span>
-              Start Agent
-            </QuickActionButton>
-          ) : (
-            <QuickActionButton
-              isDarkMode={isDarkMode}
-              onClick={stopAgent}
-            >
-              <span className="icon">{Icons.stop}</span>
-              Stop Agent
-            </QuickActionButton>
-          )}
-          
-          <QuickActionButton
-            isDarkMode={isDarkMode}
-            onClick={refreshPerformance}
-          >
-            <span className="icon">{Icons.refresh}</span>
-            Refresh Stats
-          </QuickActionButton>
-        </div>
-
-        {user && (
-          <div style={{ 
-            padding: '16px 20px', 
-            marginTop: 'auto',
-            borderTop: `1px solid ${isDarkMode ? '#404040' : '#e1e4e8'}`
-          }}>
-            <PerformanceTitle isDarkMode={isDarkMode}>
-              User
-            </PerformanceTitle>
-            <div style={{ 
-              fontSize: '13px', 
-              color: isDarkMode ? '#e1e4e8' : '#586069',
-              marginBottom: '4px'
-            }}>
-              {user.name}
+      {/* Stats Cluster */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-thin scrollbar-thumb-white/10">
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+             <Activity className="w-3.5 h-3.5 text-emerald-400" />
+             <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Real-time Vitals</h3>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-[10px] font-bold mb-1.5">
+                <span className="text-slate-400 uppercase">System CPU</span>
+                <span className="text-emerald-400 font-mono">{performanceData.cpu.toFixed(1)}%</span>
+              </div>
+              <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${performanceData.cpu}%` }} />
+              </div>
             </div>
-            <div style={{ 
-              fontSize: '12px', 
-              color: isDarkMode ? '#9ca3af' : '#6b7280'
-            }}>
-              {user.email}
+            <div>
+              <div className="flex justify-between text-[10px] font-bold mb-1.5">
+                <span className="text-slate-400 uppercase">Memory Load</span>
+                <span className="text-cyan-400 font-mono">{performanceData.memory.toFixed(1)}%</span>
+              </div>
+              <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-cyan-500 transition-all duration-1000" style={{ width: `${performanceData.memory}%` }} />
+              </div>
             </div>
           </div>
-        )}
-      </SidePanelBody>
-    </SidePanelSidebar>
+        </section>
+
+        <section>
+           <div className="flex items-center gap-2 mb-4">
+             <Zap className="w-3.5 h-3.5 text-amber-400" />
+             <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Quick Controls</h3>
+           </div>
+           <div className="space-y-3">
+              {!isAgentRunning ? (
+                <button
+                  onClick={startAgent}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/10 hover:scale-[1.02]"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" /> Start Engine
+                </button>
+              ) : (
+                <button
+                  onClick={stopAgent}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-500/20 border border-rose-500/30 text-rose-400 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current" /> Stop Agent
+                </button>
+              )}
+              <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-white/5 border border-white/10 text-slate-400 hover:text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all">
+                <RefreshCw className="w-3.5 h-3.5" /> Purge Cache
+              </button>
+           </div>
+        </section>
+      </div>
+
+      {/* User / Footer */}
+      {user && (
+        <div className="p-4 bg-white/[0.02] border-t border-white/5">
+          <div className="flex items-center gap-3 p-2 rounded-xl bg-black/20 border border-white/5">
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+               <UserIcon className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div className="min-w-0">
+               <div className="text-xs font-bold text-white truncate">{user.name}</div>
+               <div className="text-[10px] text-slate-500 truncate">{user.email}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </aside>
   );
 };
 
