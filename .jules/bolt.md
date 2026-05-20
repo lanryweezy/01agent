@@ -23,3 +23,6 @@
 ## 2024-05-24 - React Stale Closures & Linter
 **Learning:** Disabling the `react-hooks/exhaustive-deps` linter rule to omit a function (like an event handler) from a `useMemo` or `useCallback` dependency array to force a micro-optimization is a dangerous anti-pattern. It creates **stale closures** where the memoized function references outdated state or props, breaking component functionality.
 **Action:** Never bypass the exhaustive-deps linter to avoid recalculations. If a function causes unwanted recalculations, wrap the function itself in `useCallback` higher up the component tree.
+## 2024-05-24 - Database index for performance
+**Learning:** Adding indexes to frequently accessed foreign keys (like user_id, thread_task_id, author_id) in SQLModel prevents sequential scans during table joins, significantly improving read query performance with minimal cost to writes.
+**Action:** Use `index=True` on frequently queried fields in SQLModel/SQLAlchemy models.
