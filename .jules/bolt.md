@@ -26,3 +26,7 @@
 ## 2024-05-24 - Database index for performance
 **Learning:** Adding indexes to frequently accessed foreign keys (like user_id, thread_task_id, author_id) in SQLModel prevents sequential scans during table joins, significantly improving read query performance with minimal cost to writes.
 **Action:** Use `index=True` on frequently queried fields in SQLModel/SQLAlchemy models.
+
+## 2024-05-24 - React Rules of Hooks within JSX
+**Learning:** You cannot call hooks like `useMemo` inline directly inside the return statement's JSX, even if they aren't conditionally rendered (e.g. `{useMemo(() => <div />, [])}`). This violates the rules of hooks syntax expected by Vite's esbuild React JSX transform, leading to build crashes (`Unexpected end of file before a closing "div" tag`).
+**Action:** Always extract `useMemo` computations to the top level of the component's function body and assign them to a variable, then reference that variable inside the JSX `return` block.

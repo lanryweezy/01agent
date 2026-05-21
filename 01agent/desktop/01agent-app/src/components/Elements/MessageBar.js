@@ -30,7 +30,10 @@ const MessageItem = styled.div`
   }
 `;
 
-const MessageBar = ({ messages = [] }) => {
+// ⚡ Bolt: Wrapped MessageBar in React.memo to prevent unnecessary re-renders
+// when parent components update high-frequency state, since the messages array
+// only changes on specific events.
+const MessageBar = React.memo(({ messages = [] }) => {
   if (!messages || messages.length === 0) return null;
 
   return (
@@ -42,6 +45,6 @@ const MessageBar = ({ messages = [] }) => {
       ))}
     </MessageBarContainer>
   );
-};
+});
 
 export default MessageBar;
