@@ -119,6 +119,21 @@ const AgentStatus = () => {
     ));
   }, [agentStatus.logs, selectedLogLevel]);
 
+  // ⚡ Bolt: Memoize components rendering to prevent O(N) VDOM node recreation on every fast telemetry tick
+  const memoizedComponentElements = useMemo(() => {
+    return Object.entries(agentStatus.components).map(([name, status]) => (
+      <div key={name} className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col items-center text-center group hover:bg-white/[0.04] transition-all">
+        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        </div>
+        <div className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter leading-tight">
+          {name.replace(/([A-Z])/g, ' $1').trim()}
+        </div>
+        <div className="text-[9px] text-emerald-500/70 mt-1 font-mono">{status.toUpperCase()}</div>
+      </div>
+    ));
+  }, [agentStatus.components]);
+
   return (
     <div className="flex-1 h-full flex flex-col bg-[#0a0f1d] overflow-hidden">
       {/* Header */}
@@ -207,17 +222,7 @@ const AgentStatus = () => {
         <section>
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Core Orchestrator Matrix</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {Object.entries(agentStatus.components).map(([name, status]) => (
-              <div key={name} className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col items-center text-center group hover:bg-white/[0.04] transition-all">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter leading-tight">
-                  {name.replace(/([A-Z])/g, ' $1').trim()}
-                </div>
-                <div className="text-[9px] text-emerald-500/70 mt-1 font-mono">{status.toUpperCase()}</div>
-              </div>
-            ))}
+            {memoizedComponentElements}
           </div>
         </section>
 
