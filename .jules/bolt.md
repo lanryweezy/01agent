@@ -30,3 +30,6 @@
 ## 2024-05-24 - React Rules of Hooks within JSX
 **Learning:** You cannot call hooks like `useMemo` inline directly inside the return statement's JSX, even if they aren't conditionally rendered (e.g. `{useMemo(() => <div />, [])}`). This violates the rules of hooks syntax expected by Vite's esbuild React JSX transform, leading to build crashes (`Unexpected end of file before a closing "div" tag`).
 **Action:** Always extract `useMemo` computations to the top level of the component's function body and assign them to a variable, then reference that variable inside the JSX `return` block.
+## 2026-05-23 - Array Includes to Set
+**Learning:** The `.includes()` method on an array performs an `O(N)` linear scan. When this is placed inside a loop that iterates `M` times, it creates an `O(N * M)` operation. In components like `PieSelect` that evaluate selection changes, this can cause performance issues if the list of selected items is large.
+**Action:** Convert the array to a `Set` before the loop, and use `.has()` inside the loop. This changes the complexity from `O(N * M)` to `O(N + M)`, providing a significant speedup for large arrays.

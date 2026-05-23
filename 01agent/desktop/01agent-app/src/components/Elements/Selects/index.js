@@ -150,8 +150,10 @@ const PieSelect = ({
       return true;
     }
 
+    // ⚡ Bolt: Use O(1) Set lookup to prevent O(N) array scan in loop
+    const selectedSet = new Set(selectedItems);
     for (let i = 0; i < value.length; i++) {
-      if (!selectedItems.includes(value[i])) {
+      if (!selectedSet.has(value[i])) {
         return true;
       }
     }
