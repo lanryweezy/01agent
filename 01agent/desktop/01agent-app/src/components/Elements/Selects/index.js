@@ -57,6 +57,9 @@ const PieSelect = ({
   const [inputText, setInputText] = useState(getItemFromValue(value) !== null ? getItemFromValue(value)[itemText] : '');
   const [selectedItems, setSelectedItems] = useState([]);
 
+  // ⚡ Bolt: Memoize the Set creation to turn O(N) array scans into O(1) lookups
+  const selectedItemsSet = useMemo(() => new Set(selectedItems), [selectedItems]);
+
   const getMultipleSelectionText = (selected=selectedItems) => {
     let text = '';
     if (selected.length === 0) {
@@ -96,7 +99,7 @@ const PieSelect = ({
   };
 
   const isItemSelected = (value) => {
-    return selectedItems.includes(value);
+    return selectedItemsSet.has(value);
   }
 
   const onSelectClick = () => {
@@ -144,21 +147,6 @@ const PieSelect = ({
         window.removeEventListener('click', closeOpenSelect);
     };
   }, []);
-
-  const isMultipleSelectionChanged = (value) => {
-    if (value.length !== selectedItems.length) {
-      return true;
-    }
-
-    for (let i = 0; i < value.length; i++) {
-      if (!selectedItems.includes(value[i])) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
   useEffect(() => {
     if (value !== null) {
       if (multiple) {
@@ -166,210 +154,11 @@ const PieSelect = ({
         setInputText(getMultipleSelectionText(value));
       } else {
         const item = getItemFromValue(value);
-        setInputText(item !== null ? item[itemText] : '');
+        setInputText(item !== null ? item[itemText] : "");
       }
     } else {
-      setInputText('');
+      setInputText("");
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  if (label !== null) {
-    if (!verticalLabel) {
-      return (
-        <>
-          <LabeledSelectContainer>
-            <SelectLabel>
-              {label}
-            </SelectLabel>
-            <div style={{flex: '1 1 75%'}}>
-              <Select background={background} padding={padding}
-                ref={selectRef}
-                borderRadius={borderRadius} outlined={outlined} onClick={() => onSelectClick()}>
-                <SelectInput placeholder={placeholder}
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  readOnly={!searchable || multiple}
-                  type="text" />
-                <div style={{marginLeft: 'auto'}}>
-                  <ListItemIcon iconSize="22px">
-                    {
-                      !isOptionsOpen ? <IoCaretDown /> : <IoCaretUp />
-                    }
-                  </ListItemIcon>
-                </div>
-                {
-                  isOptionsOpen ?
-                  <OptionsDiv>
-                    <OptionsDivContainer>
-                      {
-                        filteredItems.map((item, key) => {
-                          return <ListItem clickable onClick={() => onItemSelected(item[itemValue])} key={'option__' + key}>
-                            <ListItemContent>
-                              <ListItemTitle fontWeight="400" fontSize="14px">
-                                {item[itemText]}
-                              </ListItemTitle>
-                              {
-                                itemText2 !== null ? 
-                                <ListItemSubtitle fontWeight='400' fontSize='13px' color='rgba(0, 0, 0, 0.7)'>
-                                  {item[itemText2]}
-                                </ListItemSubtitle> : <></>
-                              }
-                            </ListItemContent>
-                            {
-                              multiple ?
-                              <ListItemEnd>
-                                <ListItemIcon color="var(--primary-color)" iconSize="20px">
-                                  {
-                                    isItemSelected(item[itemValue]) ? <ImCheckboxChecked /> : <ImCheckboxUnchecked />
-                                  }
-                                </ListItemIcon>
-                              </ListItemEnd> : <></>
-                            }
-                          </ListItem>;
-                        })
-                      }
-                    </OptionsDivContainer>
-                  </OptionsDiv> :
-                  <></>
-                }
-              </Select>
-              {
-                error !== null ?
-                <SelectError>
-                  {error}
-                </SelectError> :
-                <></>
-              }
-            </div>
-          </LabeledSelectContainer>
-        </>
-      );
-    } else {
-      return (
-        <>
-          <VerticalLabeledSelectContainer>
-            <SelectLabel verticalLabel>
-              {label}
-            </SelectLabel>
-            <Select background={background} placeholder={placeholder} padding={padding}
-              ref={selectRef}
-              borderRadius={borderRadius} outlined={outlined} onClick={() => onSelectClick()}>
-              <SelectInput placeholder={placeholder}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                readOnly={!searchable || multiple}
-                type="text" />
-              <div style={{marginLeft: 'auto'}}>
-                <ListItemIcon iconSize="22px">
-                  {
-                    !isOptionsOpen ? <IoCaretDown /> : <IoCaretUp />
-                  }
-                </ListItemIcon>
-              </div>
-              {
-                isOptionsOpen ?
-                <OptionsDiv>
-                  <OptionsDivContainer>
-                    {
-                      filteredItems.map((item, key) => {
-                        return <ListItem clickable onClick={() => onItemSelected(item[itemValue])} key={'option__' + key}>
-                          <ListItemContent>
-                            <ListItemTitle fontWeight="400" fontSize="14px">
-                              {item[itemText]}
-                            </ListItemTitle>
-                            {
-                              itemText2 !== null ? 
-                              <ListItemSubtitle fontWeight='400' fontSize='13px' color='rgba(0, 0, 0, 0.7)'>
-                                {item[itemText2]}
-                              </ListItemSubtitle> : <></>
-                            }
-                          </ListItemContent>
-                          {
-                            multiple ?
-                            <ListItemEnd>
-                              <ListItemIcon color="var(--primary-color)" iconSize="20px">
-                                {
-                                  isItemSelected(item[itemValue]) ? <ImCheckboxChecked /> : <ImCheckboxUnchecked />
-                                }
-                              </ListItemIcon>
-                            </ListItemEnd> : <></>
-                          }
-                        </ListItem>;
-                      })
-                    }
-                  </OptionsDivContainer>
-                </OptionsDiv> :
-                <></>
-              }
-            </Select>
-            {
-              error !== null ?
-              <SelectError>
-                {error}
-              </SelectError> :
-              <></>
-            }
-          </VerticalLabeledSelectContainer>
-        </>
-      );
-    }
-  }
-  return (
-    <>
-      <Select background={background} placeholder={placeholder} padding={padding}
-        ref={selectRef}
-        borderRadius={borderRadius} outlined={outlined} onClick={() => onSelectClick()}>
-        <SelectInput placeholder={placeholder}
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          readOnly={!searchable || multiple}
-          type="text" />
-        <div style={{marginLeft: 'auto'}}>
-          <ListItemIcon iconSize="22px">
-            {
-              !isOptionsOpen ? <IoCaretDown /> : <IoCaretUp />
-            }
-          </ListItemIcon>
-        </div>
-        {
-          isOptionsOpen ?
-          <OptionsDiv>
-            {
-              filteredItems.map((item, key) => {
-                return <ListItem clickable onClick={() => onItemSelected(item[itemValue])} key={'option__' + key}>
-                  <ListItemContent>
-                    <ListItemTitle fontWeight="400" fontSize="14px">
-                      {item[itemText]}
-                    </ListItemTitle>
-                    {
-                      itemText2 !== null ? 
-                      <ListItemSubtitle fontWeight='400' fontSize='13px' color='rgba(0, 0, 0, 0.7)'>
-                        {item[itemText2]}
-                      </ListItemSubtitle> : <></>
-                    }
-                  </ListItemContent>
-                  {
-                    multiple ?
-                    <ListItemEnd>
-                      <ListItemIcon color="var(--primary-color)" iconSize="20px">
-                        {
-                          isItemSelected(item[itemValue]) ? <ImCheckboxChecked /> : <ImCheckboxUnchecked />
-                        }
-                      </ListItemIcon>
-                    </ListItemEnd> : <></>
-                  }
-                </ListItem>;
-              })
-            }
-          </OptionsDiv> :
-          <></>
-        }
-      </Select>
-      <SelectError>
-        {error}
-      </SelectError>
-    </>
-  );
-};
-
-export default PieSelect;
