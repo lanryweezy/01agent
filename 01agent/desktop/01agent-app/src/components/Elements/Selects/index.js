@@ -147,6 +147,23 @@ const PieSelect = ({
         window.removeEventListener('click', closeOpenSelect);
     };
   }, []);
+
+  const isMultipleSelectionChanged = (value) => {
+    if (value.length !== selectedItems.length) {
+      return true;
+    }
+
+    // ⚡ Bolt: Use O(1) Set lookup to prevent O(N) array scan in loop
+    const selectedSet = new Set(selectedItems);
+    for (let i = 0; i < value.length; i++) {
+      if (!selectedSet.has(value[i])) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   useEffect(() => {
     if (value !== null) {
       if (multiple) {
