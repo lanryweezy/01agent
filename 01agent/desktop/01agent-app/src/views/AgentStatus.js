@@ -170,6 +170,21 @@ const AgentStatus = () => {
     ));
   }, [agentStatus.components]);
 
+  const memoizedQuickStats = useMemo(() => (
+    [
+      { label: 'Runtime Uptime', value: formatUptime(agentStatus.uptime), icon: Activity, color: 'text-cyan-400' },
+      { label: 'Active Task', value: agentStatus.currentTask || 'N/A', icon: Terminal, color: 'text-emerald-400' },
+      { label: 'Exec Strategy', value: 'Vision V2', icon: Zap, color: 'text-amber-400' },
+      { label: 'Queue Depth', value: agentStatus.tasksInQueue, icon: ShieldCheck, color: 'text-indigo-400' }
+    ].map((stat, i) => (
+      <div key={i} className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 backdrop-blur-sm">
+        <stat.icon className={`w-5 h-5 ${stat.color} mb-3`} />
+        <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.label}</div>
+        <div className="text-lg font-bold text-white mt-1 truncate">{stat.value}</div>
+      </div>
+    ))
+  ), [agentStatus.uptime, agentStatus.currentTask, agentStatus.tasksInQueue]);
+
   return (
     <div className="flex-1 h-full flex flex-col bg-[#0a0f1d] overflow-hidden">
       {/* Header */}
@@ -213,18 +228,7 @@ const AgentStatus = () => {
           
           {/* Quick Stats */}
           <div className="xl:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Runtime Uptime', value: formatUptime(agentStatus.uptime), icon: Activity, color: 'text-cyan-400' },
-              { label: 'Active Task', value: agentStatus.currentTask || 'N/A', icon: Terminal, color: 'text-emerald-400' },
-              { label: 'Exec Strategy', value: 'Vision V2', icon: Zap, color: 'text-amber-400' },
-              { label: 'Queue Depth', value: agentStatus.tasksInQueue, icon: ShieldCheck, color: 'text-indigo-400' }
-            ].map((stat, i) => (
-              <div key={i} className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 backdrop-blur-sm">
-                <stat.icon className={`w-5 h-5 ${stat.color} mb-3`} />
-                <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.label}</div>
-                <div className="text-lg font-bold text-white mt-1 truncate">{stat.value}</div>
-              </div>
-            ))}
+            {memoizedQuickStats}
           </div>
 
           {/* System Health */}
