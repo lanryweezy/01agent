@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   LabeledSelectContainer,
   VerticalLabeledSelectContainer,
@@ -50,17 +50,21 @@ const PieSelect = ({
     return map;
   }, [items, itemValue]);
 
-  const getItemFromValue = (value) => {
-    return itemsByValue.get(value) || null;
-  };
+  const getItemFromValue = useCallback((val) => {
+    return itemsByValue.get(val) || null;
+  }, [itemsByValue]);
 
   const [inputText, setInputText] = useState(getItemFromValue(value) !== null ? getItemFromValue(value)[itemText] : '');
   const [selectedItems, setSelectedItems] = useState([]);
+  const selectedItemsRef = useRef(selectedItems);
+  useEffect(() => {
+    selectedItemsRef.current = selectedItems;
+  }, [selectedItems]);
 
   // ⚡ Bolt: Memoize the Set creation to turn O(N) array scans into O(1) lookups
   const selectedItemsSet = useMemo(() => new Set(selectedItems), [selectedItems]);
 
-  const getMultipleSelectionText = (selected=selectedItems) => {
+  const getMultipleSelectionText = useCallback((selected=selectedItemsRef.current) => {
     let text = '';
     if (selected.length === 0) {
       return '';
@@ -77,7 +81,7 @@ const PieSelect = ({
       }
     }
     return text;
-  };
+  }, [getItemFromValue, itemText]);
 
   const onItemSelected = (value) => {
     if (!multiple) {
@@ -129,16 +133,15 @@ const PieSelect = ({
       }
       return returnedItems;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, multiple, value, itemText, inputText]);
+  }, [items, multiple, value, itemText, inputText, getItemFromValue]);
 
   const selectRef = useRef();
 
-  const closeOpenSelect = (event) => {
+  const closeOpenSelect = useCallback((event) => {
     if (selectRef.current && !selectRef.current.contains(event.target)) {
       setOptionsOpen(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     window.addEventListener('click', closeOpenSelect, { passive: true });
@@ -146,23 +149,8 @@ const PieSelect = ({
     return () => {
         window.removeEventListener('click', closeOpenSelect);
     };
-  }, []);
+  }, [closeOpenSelect]);
 
-  const isMultipleSelectionChanged = (value) => {
-    if (value.length !== selectedItems.length) {
-      return true;
-    }
-
-    // ⚡ Bolt: Use O(1) Set lookup to prevent O(N) array scan in loop
-    const selectedSet = new Set(selectedItems);
-    for (let i = 0; i < value.length; i++) {
-      if (!selectedSet.has(value[i])) {
-        return true;
-      }
-    }
-
-    return false;
-  };
 
   useEffect(() => {
     if (value !== null) {
@@ -176,6 +164,65 @@ const PieSelect = ({
     } else {
       setInputText("");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  }, [value, multiple, getMultipleSelectionText, getItemFromValue, itemText]);
 
+  let SelectContainer = LabeledSelectContainer;
+  if (verticalLabel) {
+    SelectContainer = VerticalLabeledSelectContainer;
+  }
+
+  return (
+    <SelectContainer>
+      {label && <SelectLabel>{label}</SelectLabel>}
+      <Select
+        ref={selectRef}
+        outlined={outlined}
+        background={background}
+        padding={padding}
+        borderRadius={borderRadius}
+        onClick={onSelectClick}
+      >
+        <SelectInput
+          placeholder={placeholder}
+          value={inputText}
+          readOnly={!searchable}
+          onChange={(e) => {
+            if (searchable) {
+              setInputText(e.target.value);
+            }
+          }}
+        />
+        <ListItemIcon>
+          {isOptionsOpen ? <IoCaretUp /> : <IoCaretDown />}
+        </ListItemIcon>
+      </Select>
+      {error && <SelectError>{error}</SelectError>}
+      {isOptionsOpen && (
+        <OptionsDivContainer>
+          <OptionsDiv>
+            {filteredItems.map((item, index) => {
+              return (
+                <ListItem
+                  key={index}
+                  onClick={() => onItemSelected(item[itemValue])}
+                >
+                  <ListItemContent>
+                    <ListItemTitle>{item[itemText]}</ListItemTitle>
+                    {item[itemText2] && <ListItemSubtitle>{item[itemText2]}</ListItemSubtitle>}
+                  </ListItemContent>
+                  {multiple && (
+                    <ListItemEnd>
+                      {isItemSelected(item[itemValue]) ? <ImCheckboxChecked /> : <ImCheckboxUnchecked />}
+                    </ListItemEnd>
+                  )}
+                </ListItem>
+              );
+            })}
+          </OptionsDiv>
+        </OptionsDivContainer>
+      )}
+    </SelectContainer>
+  );
+};
+
+export default PieSelect;
