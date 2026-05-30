@@ -50,8 +50,9 @@ const PieSelect = ({
     return map;
   }, [items, itemValue]);
 
-  const getItemFromValue = useCallback((val) => {
-    return itemsByValue.get(val) || null;
+  // ⚡ Bolt: Wrapped in useCallback to prevent function recreation on every render, allowing it to be safely included in dependency arrays without causing infinite loops or stale closures.
+  const getItemFromValue = useCallback((value) => {
+    return itemsByValue.get(value) || null;
   }, [itemsByValue]);
 
   const [inputText, setInputText] = useState(getItemFromValue(value) !== null ? getItemFromValue(value)[itemText] : '');
@@ -64,9 +65,9 @@ const PieSelect = ({
   // ⚡ Bolt: Memoize the Set creation to turn O(N) array scans into O(1) lookups
   const selectedItemsSet = useMemo(() => new Set(selectedItems), [selectedItems]);
 
-  const getMultipleSelectionText = useCallback((selected=selectedItemsRef.current) => {
+  const getMultipleSelectionText = useCallback((selected) => {
     let text = '';
-    if (selected.length === 0) {
+    if (!selected || selected.length === 0) {
       return '';
     }
     for (let i = 0; i < selected.length; i++) {
@@ -170,6 +171,7 @@ const PieSelect = ({
   if (verticalLabel) {
     SelectContainer = VerticalLabeledSelectContainer;
   }
+  }, [value, multiple, getItemFromValue, itemText, getMultipleSelectionText]);
 
   return (
     <SelectContainer>

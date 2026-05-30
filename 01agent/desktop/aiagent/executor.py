@@ -31,7 +31,50 @@ class Executor:
             try:
                 if action == "mouse_move": x, y = self._map_coords(params.get("x"), params.get("y")); pyautogui.moveTo(x, y)
                 elif action == "left_click": x, y = self._map_coords(params.get("x"), params.get("y")); pyautogui.click(x, y, button='left')
-                elif action == "type": pyautogui.write(params.get("text", ""), interval=0.01)
+                elif action == "right_click": x, y = self._map_coords(params.get("x"), params.get("y")); pyautogui.click(x, y, button='right')
+                elif action == "double_click": x, y = self._map_coords(params.get("x"), params.get("y")); pyautogui.doubleClick(x, y)
+                elif action == "triple_click": x, y = self._map_coords(params.get("x"), params.get("y")); pyautogui.tripleClick(x, y)
+                elif action == "left_click_drag":
+                    from_x, from_y = self._map_coords(params.get("from", {}).get("x"), params.get("from", {}).get("y"))
+                    to_x, to_y = self._map_coords(params.get("to", {}).get("x"), params.get("to", {}).get("y"))
+                    pyautogui.moveTo(from_x, from_y)
+                    pyautogui.dragTo(to_x, to_y, button='left', duration=0.5)
+                elif action == "left_mouse_down": pyautogui.mouseDown(button='left')
+                elif action == "left_mouse_up": pyautogui.mouseUp(button='left')
+                elif action == "scroll":
+                    direction = params.get("scroll_direction", "down")
+                    amount = params.get("scroll_amount", 1)
+                    # Amount is usually clicks in pyautogui
+                    clicks = amount * 100 if direction == "up" else -amount * 100
+                    x, y = params.get("x"), params.get("y")
+                    if x is not None and y is not None:
+                        mx, my = self._map_coords(x, y)
+                        pyautogui.scroll(clicks, x=mx, y=my)
+                    else:
+                        pyautogui.scroll(clicks)
+                elif action == "type":
+                    if params.get("replace"):
+                        pyautogui.hotkey('ctrl', 'a')
+                        pyautogui.press('backspace')
+                    pyautogui.write(params.get("text", ""), interval=0.01)
+                elif action == "key": pyautogui.press(params.get("text", ""))
+                elif action == "key_combo": pyautogui.hotkey(*params.get("keys", []))
+                elif action == "hold_key":
+                    key = params.get("text", "")
+                    duration = params.get("duration", 1.0)
+                    pyautogui.keyDown(key)
+                    time.sleep(duration)
+                    pyautogui.keyUp(key)
+                elif action == "clipboard_set": pyperclip.copy(params.get("text", ""))
+                elif action == "launch_browser": webbrowser.open(params.get("url", "https://www.google.com"))
+                elif action == "launch_app":
+                    app_name = params.get("app_name", "")
+                    if self.system == "windows":
+                        subprocess.Popen(f'start "" "{app_name}"', shell=True)
+                    elif self.system == "darwin":
+                        subprocess.Popen(f'open -a "{app_name}"', shell=True)
+                    else:
+                        subprocess.Popen(app_name, shell=True)
                 elif action == "wait": time.sleep(params.get("duration", 1.0))
                 elif action == "shell_execute":
                     cmd = params.get("command")
